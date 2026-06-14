@@ -365,6 +365,67 @@ patch("components_pc/libssh/src/misc.c", [
     ),
 ], required=False)
 
+# --- AdamNet BoIP: don't drop responses on the 300us hardware deadline ----
+# adamnet_response_ack/nack (and the disk t<1500/t<300 windows) only transmit if
+# the device answers within a few hundred microseconds of the command -- a real
+# one-wire-bus timing constraint. Over BoIP (a reliable TCP stream) these add no
+# value, and on a slow host the media read + scheduling jitter blows the window,
+# so the response is silently dropped, the AdamNet master times out (800ms) and
+# the EOS retries the block forever (the DDP "stuck at block N" stall). On the PC
+# build, always send the response; the ESP timing is left unchanged.
+patch("lib/bus/adamnet/adamnet.cpp", [
+    (
+        '    if (esp_timer_get_time() - SYSTEM_BUS.start_time < ADAMNET_RESPONSE_DEADLINE_US)\n'
+        '        adamnet_send(0x90 | _devnum);\n',
+        '#ifdef ESP_PLATFORM\n'
+        '    if (esp_timer_get_time() - SYSTEM_BUS.start_time < ADAMNET_RESPONSE_DEADLINE_US)\n'
+        '#endif\n'
+        '        adamnet_send(0x90 | _devnum);\n',
+    ),
+    (
+        '    if (esp_timer_get_time() - SYSTEM_BUS.start_time < ADAMNET_RESPONSE_DEADLINE_US)\n'
+        '        adamnet_send(0xC0 | _devnum);\n',
+        '#ifdef ESP_PLATFORM\n'
+        '    if (esp_timer_get_time() - SYSTEM_BUS.start_time < ADAMNET_RESPONSE_DEADLINE_US)\n'
+        '#endif\n'
+        '        adamnet_send(0xC0 | _devnum);\n',
+    ),
+])
+patch("lib/device/adamnet/disk.cpp", [
+    (
+        '    int64_t t = esp_timer_get_time() - SYSTEM_BUS.start_time;\n'
+        '\n'
+        '    if (t < 1500)\n'
+        '    {\n'
+        '        adamnet_response_send();\n'
+        '    }\n',
+        '    int64_t t = esp_timer_get_time() - SYSTEM_BUS.start_time;\n'
+        '    (void)t;\n'
+        '#ifdef ESP_PLATFORM\n'
+        '    if (t < 1500)\n'
+        '#endif\n'
+        '    {\n'
+        '        adamnet_response_send();\n'
+        '    }\n',
+    ),
+    (
+        '    int64_t t = esp_timer_get_time() - SYSTEM_BUS.start_time;\n'
+        '\n'
+        '    if (t < 300)\n'
+        '    {\n'
+        '        virtualDevice::adamnet_response_status();\n'
+        '    }\n',
+        '    int64_t t = esp_timer_get_time() - SYSTEM_BUS.start_time;\n'
+        '    (void)t;\n'
+        '#ifdef ESP_PLATFORM\n'
+        '    if (t < 300)\n'
+        '#endif\n'
+        '    {\n'
+        '        virtualDevice::adamnet_response_status();\n'
+        '    }\n',
+    ),
+])
+
 # --- Drop in the Android entry-point wrapper ------------------------------
 android_dir = clone_dir / "android"
 android_dir.mkdir(exist_ok=True)
