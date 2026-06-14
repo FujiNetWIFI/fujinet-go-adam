@@ -116,6 +116,7 @@ void SessionRuntime::AttachSurface(JNIEnv* env, jobject surface) {
     }
     if (surface) {
         window_ = ANativeWindow_fromSurface(env, surface);
+        LOGI("AttachSurface: window=%p", static_cast<void*>(window_));
     }
 }
 
@@ -130,6 +131,11 @@ void SessionRuntime::DetachSurface(JNIEnv* env) {
 
 void SessionRuntime::OnFrame(const uint16_t* rgb565, int width, int height) {
     std::lock_guard<std::mutex> lock(surface_mutex_);
+    static bool first_frame = true;
+    if (first_frame) {
+        first_frame = false;
+        LOGI("First frame: %dx%d window=%p", width, height, static_cast<void*>(window_));
+    }
     if (!window_ || !rgb565) return;
 
     ANativeWindow_setBuffersGeometry(window_, width, height, WINDOW_FORMAT_RGB_565);

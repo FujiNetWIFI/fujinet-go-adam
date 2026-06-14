@@ -138,6 +138,13 @@ if needle not in text:
 text = text.replace(needle, replacement, 1)
 open(dst, "w", encoding="latin-1").write(text)
 PY
+    elif [[ "${c}" == "AdamSDLSound_2.c" ]]; then
+        # soundData() reads its PSG state from the SDL callback's userdata pointer
+        # (Init() sets it to &soundState, which is file-static). Expose an accessor
+        # so the Android audio bridge can hand soundData the right pointer.
+        cp "${SOURCE_DIR}/${c}" "${GENERATED_SOURCE_ROOT}/${c}"
+        printf '\n/* [fujinet-go-adam] expose the file-static PSG state to the audio bridge. */\nvoid *adamsound_get_state(void) { return &soundState; }\n' \
+            >> "${GENERATED_SOURCE_ROOT}/${c}"
     else
         cp "${SOURCE_DIR}/${c}" "${GENERATED_SOURCE_ROOT}/${c}"
     fi
