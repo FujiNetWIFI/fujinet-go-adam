@@ -151,6 +151,10 @@ def patch(rel, transforms, required=True):
     for old, new, *opt in transforms:
         count = opt[0] if opt else 1
         if old not in text:
+            # Idempotent: if the transform's result is already present (e.g. the
+            # fix was ported upstream into the checkout), skip instead of failing.
+            if new in text:
+                continue
             sys.exit(f"build-fujinet.sh: patch anchor not found in {rel}:\n---\n{old[:200]}\n---")
         text = text.replace(old, new, count)
     p.write_text(text)
