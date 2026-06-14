@@ -1,11 +1,11 @@
-package com.mantismoonlabs.fujinetgoadam.ui
+package online.fujinet.go.adam.ui
 
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import com.mantismoonlabs.fujinetgoadam.SessionController
+import online.fujinet.go.adam.SessionController
 
 /**
  * Hosts the ADAM video output. The native layer renders ADAMEm's RGB565 frames

@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.ui
+package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,8 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mantismoonlabs.fujinetgoadam.SessionController
-import com.mantismoonlabs.fujinetgoadam.input.AdamKeys
+import online.fujinet.go.adam.SessionController
+import online.fujinet.go.adam.input.AdamKeys
 
 /**
  * A compact on-screen ADAM keyboard. Keys inject ASCII-compatible bytes that the

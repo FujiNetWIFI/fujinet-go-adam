@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.ui
+package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.mantismoonlabs.fujinetgoadam.SessionController
+import online.fujinet.go.adam.SessionController
 
 /**
  * A ColecoVision/ADAM controller: an 8-way d-pad on the left and two fire

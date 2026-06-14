@@ -24,7 +24,7 @@ std::string JStr(JNIEnv* env, jstring s) {
 extern "C" {
 
 JNIEXPORT void JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeStartSession(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeStartSession(
         JNIEnv* env, jobject /*thiz*/,
         jstring runtimeRoot, jstring configPath, jstring sdPath, jstring dataPath,
         jobjectArray adamArgs) {
@@ -44,50 +44,50 @@ Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeStartSession(
 }
 
 JNIEXPORT void JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeStopSession(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeStopSession(
         JNIEnv* /*env*/, jobject /*thiz*/) {
     SessionRuntime::Get().StopSession();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeIsRunning(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeIsRunning(
         JNIEnv* /*env*/, jobject /*thiz*/) {
     return SessionRuntime::Get().IsRunning() ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeAttachSurface(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeAttachSurface(
         JNIEnv* env, jobject /*thiz*/, jobject surface) {
     SessionRuntime::Get().AttachSurface(env, surface);
 }
 
 JNIEXPORT void JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeDetachSurface(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeDetachSurface(
         JNIEnv* env, jobject /*thiz*/) {
     SessionRuntime::Get().DetachSurface(env);
 }
 
 JNIEXPORT void JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeInjectKey(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeInjectKey(
         JNIEnv* /*env*/, jobject /*thiz*/, jint adamChar) {
     SessionRuntime::Get().InjectKey(adamChar);
 }
 
 JNIEXPORT void JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeSetJoystick(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeSetJoystick(
         JNIEnv* /*env*/, jobject /*thiz*/, jint port, jint adamnetState) {
     SessionRuntime::Get().SetJoystick(port, adamnetState);
 }
 
 JNIEXPORT void JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeRequestReset(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeRequestReset(
         JNIEnv* /*env*/, jobject /*thiz*/, jint mode) {
     SessionRuntime::Get().RequestReset(mode);
 }
 
 // Pulls PSG samples into `out` (mono signed-16). Returns the sample count.
 JNIEXPORT jint JNICALL
-Java_com_mantismoonlabs_fujinetgoadam_core_EmulatorNative_nativeRenderAudio(
+Java_online_fujinet_go_adam_core_EmulatorNative_nativeRenderAudio(
         JNIEnv* env, jobject /*thiz*/, jshortArray out) {
     if (out == nullptr) return 0;
     const jsize n = env->GetArrayLength(out);

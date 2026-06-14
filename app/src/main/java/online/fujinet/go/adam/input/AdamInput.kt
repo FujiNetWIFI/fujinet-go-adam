@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.input
+package online.fujinet.go.adam.input
 
 /**
  * Encoding helpers for ADAM/ColecoVision input, kept on the Kotlin side so the

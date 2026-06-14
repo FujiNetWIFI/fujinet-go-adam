@@ -104,11 +104,9 @@ tasks.matching { task ->
 }
 
 android {
-    namespace = "com.mantismoonlabs.fujinetgoadam"
+    namespace = "online.fujinet.go.adam"
     compileSdk = 36
     ndkVersion = "29.0.14206865"
-
-    flavorDimensions += "branding"
 
     signingConfigs {
         if (keystoreProperties.isNotEmpty()) {
@@ -122,6 +120,7 @@ android {
     }
 
     defaultConfig {
+        applicationId = "online.fujinet.go.adam"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -158,22 +157,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-    }
-    productFlavors {
-        create("mantis") {
-            dimension = "branding"
-            applicationId = "com.mantismoonlabs.fujinetgoadam"
-            buildConfigField("String", "BRAND_MEDIA_SELECTION_COMMENT", "\"FujiNet Go Adam media selections\"")
-            buildConfigField("String", "BRAND_SYSTEM_ROM_SELECTION_COMMENT", "\"FujiNet Go Adam system ROM selections\"")
-            buildConfigField("String", "BRAND_EXTERNAL_MEDIA_DIR_NAME", "\"FujiNet Go Adam\"")
-        }
-        create("oss") {
-            dimension = "branding"
-            applicationId = "org.fujinetwifi.fujinetgoadam.oss"
-            buildConfigField("String", "BRAND_MEDIA_SELECTION_COMMENT", "\"FujiNet Go Adam OSS media selections\"")
-            buildConfigField("String", "BRAND_SYSTEM_ROM_SELECTION_COMMENT", "\"FujiNet Go Adam OSS system ROM selections\"")
-            buildConfigField("String", "BRAND_EXTERNAL_MEDIA_DIR_NAME", "\"FujiNet Go Adam OSS\"")
         }
     }
     compileOptions {

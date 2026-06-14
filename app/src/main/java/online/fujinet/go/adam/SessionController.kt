@@ -1,10 +1,10 @@
-package com.mantismoonlabs.fujinetgoadam
+package online.fujinet.go.adam
 
 import android.content.Context
 import android.util.Log
 import android.view.Surface
-import com.mantismoonlabs.fujinetgoadam.core.EmulatorNative
-import com.mantismoonlabs.fujinetgoadam.input.AdamController
+import online.fujinet.go.adam.core.EmulatorNative
+import online.fujinet.go.adam.input.AdamController
 import java.io.File
 import kotlin.concurrent.thread
 

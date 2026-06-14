@@ -1,11 +1,11 @@
-package com.mantismoonlabs.fujinetgoadam
+package online.fujinet.go.adam
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.util.Log
-import com.mantismoonlabs.fujinetgoadam.core.EmulatorNative
+import online.fujinet.go.adam.core.EmulatorNative
 import kotlin.concurrent.thread
 
 /**

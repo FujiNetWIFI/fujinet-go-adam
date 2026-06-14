@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.ui.theme
+package online.fujinet.go.adam.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

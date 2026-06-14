@@ -1,11 +1,11 @@
-package com.mantismoonlabs.fujinetgoadam
+package online.fujinet.go.adam
 
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.mantismoonlabs.fujinetgoadam.ui.EmulatorScreen
-import com.mantismoonlabs.fujinetgoadam.ui.theme.FujiNetGoAdamTheme
+import online.fujinet.go.adam.ui.EmulatorScreen
+import online.fujinet.go.adam.ui.theme.FujiNetGoAdamTheme
 
 /**
  * FujiNet Go Adam main screen: the ADAM display plus on-screen controller and

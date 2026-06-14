@@ -52,11 +52,16 @@ system NDK at `/opt/android-ndk`).
 
 ```bash
 # Full (all four ABIs):
-./gradlew assembleMantisDebug
+./gradlew assembleDebug
 
 # Fast single-ABI dev build:
-./gradlew assembleMantisDebug -PadamAbi=arm64-v8a
+./gradlew assembleDebug -PadamAbi=arm64-v8a
+
+# Unit tests:
+./gradlew testDebugUnitTest
 ```
+
+The application id / package is `online.fujinet.go.adam`.
 
 The Gradle build invokes the staging/cross-compile scripts:
 

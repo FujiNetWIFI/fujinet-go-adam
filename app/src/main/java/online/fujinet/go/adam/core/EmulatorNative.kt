@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.core
+package online.fujinet.go.adam.core
 
 import android.view.Surface
 

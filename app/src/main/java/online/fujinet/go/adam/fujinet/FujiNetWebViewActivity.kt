@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.fujinet
+package online.fujinet.go.adam.fujinet
 
 import android.annotation.SuppressLint
 import android.os.Bundle

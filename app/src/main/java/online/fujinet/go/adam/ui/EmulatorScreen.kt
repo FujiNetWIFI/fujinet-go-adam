@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.ui
+package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,9 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.mantismoonlabs.fujinetgoadam.MediaImport
-import com.mantismoonlabs.fujinetgoadam.SessionController
-import com.mantismoonlabs.fujinetgoadam.fujinet.FujiNetWebViewActivity
+import online.fujinet.go.adam.MediaImport
+import online.fujinet.go.adam.SessionController
+import online.fujinet.go.adam.fujinet.FujiNetWebViewActivity
 import kotlin.concurrent.thread
 
 private enum class Overlay { NONE, KEYBOARD, CONTROLLER }

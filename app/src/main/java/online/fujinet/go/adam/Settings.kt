@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam
+package online.fujinet.go.adam
 
 import android.content.Context
 

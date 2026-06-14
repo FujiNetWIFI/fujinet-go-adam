@@ -1,4 +1,4 @@
-package com.mantismoonlabs.fujinetgoadam.ui
+package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mantismoonlabs.fujinetgoadam.PALETTE_NAMES
-import com.mantismoonlabs.fujinetgoadam.SessionConfig
+import online.fujinet.go.adam.PALETTE_NAMES
+import online.fujinet.go.adam.SessionConfig
 
 /**
  * Machine/display settings. Changing the palette (or ejecting a cartridge)
