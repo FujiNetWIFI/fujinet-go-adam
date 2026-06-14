@@ -2,41 +2,66 @@ package online.fujinet.go.adam.ui
 
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.AndroidView
 import online.fujinet.go.adam.SessionController
 
+// The ADAM/TMS9928 frame buffer rendered by adam_host.c (WIDTH x HEIGHT).
+private const val FRAME_RATIO = 256f / 212f
+
 /**
  * Hosts the ADAM video output. The native layer renders ADAMEm's RGB565 frames
- * directly into this SurfaceView's Surface (see session_runtime.cpp::OnFrame),
- * so Compose only has to own attach/detach and start the session once the
- * surface exists.
+ * directly into this SurfaceView's Surface (see session_runtime.cpp::OnFrame).
+ *
+ * The surface is sized to the emulator's aspect ratio and centered on black, so
+ * the frame is letter-/pillar-boxed (never stretched) regardless of orientation
+ * or how much room the layout gives it.
  */
 @Composable
 fun EmulatorSurface(
     session: SessionController,
     modifier: Modifier = Modifier,
 ) {
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            SurfaceView(context).apply {
-                holder.addCallback(object : SurfaceHolder.Callback {
-                    override fun surfaceCreated(holder: SurfaceHolder) {
-                        session.attachSurface(holder.surface)
-                        session.startIfNeeded()
-                    }
+    BoxWithConstraints(
+        modifier = modifier.background(Color.Black),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Wider area than the frame -> bound by height (pillarbox);
+        // otherwise bound by width (letterbox).
+        val surfaceModifier = if (maxWidth / maxHeight > FRAME_RATIO) {
+            Modifier.fillMaxHeight().aspectRatio(FRAME_RATIO)
+        } else {
+            Modifier.fillMaxWidth().aspectRatio(FRAME_RATIO)
+        }
 
-                    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-                        session.attachSurface(holder.surface)
-                    }
+        AndroidView(
+            modifier = surfaceModifier,
+            factory = { context ->
+                SurfaceView(context).apply {
+                    holder.addCallback(object : SurfaceHolder.Callback {
+                        override fun surfaceCreated(holder: SurfaceHolder) {
+                            session.attachSurface(holder.surface)
+                            session.startIfNeeded()
+                        }
 
-                    override fun surfaceDestroyed(holder: SurfaceHolder) {
-                        session.detachSurface()
-                    }
-                })
-            }
-        },
-    )
+                        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+                            session.attachSurface(holder.surface)
+                        }
+
+                        override fun surfaceDestroyed(holder: SurfaceHolder) {
+                            session.detachSurface()
+                        }
+                    })
+                }
+            },
+        )
+    }
 }

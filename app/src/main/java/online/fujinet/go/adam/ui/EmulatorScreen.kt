@@ -1,6 +1,7 @@
 package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -115,21 +117,16 @@ private fun FunctionBar(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
+            .horizontalScroll(rememberScrollState())
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            "FujiNet Go Adam",
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.weight(1f),
-        )
         BarButton("FujiNet", active = false, onClick = onOpenFujiNet)
         BarButton("Import", active = false, onClick = onImport)
         BarButton("Cart", active = false, onClick = onCartridge)
-        BarButton("Joystick", active = overlay == Overlay.CONTROLLER, onClick = onToggleController)
-        BarButton("Keyboard", active = overlay == Overlay.KEYBOARD, onClick = onToggleKeyboard)
+        BarButton("Joy", active = overlay == Overlay.CONTROLLER, onClick = onToggleController)
+        BarButton("Keys", active = overlay == Overlay.KEYBOARD, onClick = onToggleKeyboard)
         BarButton("Reset", active = false, onClick = onReset)
         BarButton("⚙", active = false, onClick = onSettings)
     }
