@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,14 +20,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import online.fujinet.go.adam.SessionController
 import online.fujinet.go.adam.input.AdamKeys
 
 /**
- * A compact on-screen ADAM keyboard. Keys inject ASCII-compatible bytes that the
- * EOS keyboard driver consumes (see Coleco.c::AddToKeyboardBuffer). A Shift
- * toggle flips letter case and the number row to symbols.
+ * On-screen ADAM keyboard: the SmartKeys (I-VI) and WP/UNDO row, the editing
+ * block (MOVE/COPY, STORE/GET, CLEAR, INSERT, PRINT, DELETE, WILD CARD), the
+ * QWERTY core, and the cursor cluster with HOME. Keys inject the EOS byte codes
+ * the ADAM keyboard hardware produces (see AdamKeys).
  */
 @Composable
 fun AdamKeyboard(
@@ -35,48 +38,98 @@ fun AdamKeyboard(
     modifier: Modifier = Modifier,
 ) {
     var shift by remember { mutableStateOf(false) }
-
-    val rows = listOf(
-        if (shift) "!@#\$%^&*()" else "1234567890",
-        if (shift) "QWERTYUIOP" else "qwertyuiop",
-        if (shift) "ASDFGHJKL" else "asdfghjkl",
-        if (shift) "ZXCVBNM,." else "zxcvbnm,.",
-    )
+    fun send(code: Int) = session.key(code)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
-            .padding(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(3.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        for (row in rows) {
-            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                for (c in row) {
-                    Key(c.toString(), Modifier.width(34.dp)) { session.key(AdamKeys.char(c)) }
-                }
+        // SmartKeys + WP + UNDO + WILD CARD
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
+            Key("ESC\nWP", 1.6f) { send(AdamKeys.WP) }
+            Key("I", 1f) { send(AdamKeys.SMART_I) }
+            Key("II", 1f) { send(AdamKeys.SMART_II) }
+            Key("III", 1f) { send(AdamKeys.SMART_III) }
+            Key("IV", 1f) { send(AdamKeys.SMART_IV) }
+            Key("V", 1f) { send(AdamKeys.SMART_V) }
+            Key("VI", 1f) { send(AdamKeys.SMART_VI) }
+            Key("UNDO", 1.6f) { send(AdamKeys.UNDO) }
+            Key("WILD", 1.6f) { send(AdamKeys.WILDCARD) }
+        }
+        // Editing block
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
+            Key("MOVE\nCOPY", 1f) { send(AdamKeys.MOVE_COPY) }
+            Key("STORE\nGET", 1f) { send(AdamKeys.STORE_GET) }
+            Key("CLEAR", 1f) { send(AdamKeys.CLEAR) }
+            Key("INSERT", 1f) { send(AdamKeys.INSERT) }
+            Key("PRINT", 1f) { send(AdamKeys.PRINT) }
+            Key("DELETE", 1f) { send(AdamKeys.DELETE) }
+        }
+        // Number row
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
+            for (c in (if (shift) "!@#\$%^&*()" else "1234567890")) {
+                Key(c.toString(), 1f) { send(AdamKeys.char(c)) }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            Key(if (shift) "SHIFT*" else "shift", Modifier.width(64.dp)) { shift = !shift }
-            Key("space", Modifier.width(150.dp)) { session.key(AdamKeys.SPACE) }
-            Key("DEL", Modifier.width(52.dp)) { session.key(AdamKeys.BACKSPACE) }
-            Key("RTN", Modifier.width(52.dp)) { session.key(AdamKeys.RETURN) }
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
+            for (c in (if (shift) "QWERTYUIOP" else "qwertyuiop")) {
+                Key(c.toString(), 1f) { send(AdamKeys.char(c)) }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
+            Key("TAB", 1.5f) { send(AdamKeys.TAB) }
+            for (c in (if (shift) "ASDFGHJKL" else "asdfghjkl")) {
+                Key(c.toString(), 1f) { send(AdamKeys.char(c)) }
+            }
+            Key("RTN", 1.5f) { send(AdamKeys.RETURN) }
+        }
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
+            Key(if (shift) "SHIFT*" else "shift", 1.6f, active = shift) { shift = !shift }
+            for (c in (if (shift) "ZXCVBNM<>" else "zxcvbnm,.")) {
+                Key(c.toString(), 1f) { send(AdamKeys.char(c)) }
+            }
+            Key("BKSP", 1.6f) { send(AdamKeys.BACKSPACE) }
+        }
+        // Space bar + cursor cluster with HOME
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
+            Key("HOME", 1.4f) { send(AdamKeys.HOME) }
+            Key("space", 4f) { send(AdamKeys.SPACE) }
+            Key("◀", 1f) { send(AdamKeys.LEFT) }
+            Key("▲", 1f) { send(AdamKeys.UP) }
+            Key("▼", 1f) { send(AdamKeys.DOWN) }
+            Key("▶", 1f) { send(AdamKeys.RIGHT) }
         }
     }
 }
 
 @Composable
-private fun Key(label: String, modifier: Modifier = Modifier, onTap: () -> Unit) {
+private fun RowScope.Key(
+    label: String,
+    weight: Float,
+    active: Boolean = false,
+    onTap: () -> Unit,
+) {
     Box(
-        modifier = modifier
-            .height(40.dp)
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
+        modifier = Modifier
+            .weight(weight)
+            .height(44.dp)
+            .background(
+                if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                RoundedCornerShape(6.dp),
+            )
             .clickable { onTap() }
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            label,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 11.sp,
+            lineHeight = 12.sp,
+            textAlign = TextAlign.Center,
+        )
     }
 }

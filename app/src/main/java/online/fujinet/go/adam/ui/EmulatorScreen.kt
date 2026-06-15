@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +41,8 @@ private enum class Overlay { NONE, KEYBOARD, CONTROLLER }
 fun EmulatorScreen(session: SessionController) {
     var overlay by remember { mutableStateOf(Overlay.CONTROLLER) }
     val context = LocalContext.current
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val controller = rememberController(session, port = 0)
 
     var showSettings by remember { mutableStateOf(false) }
 
@@ -83,21 +88,32 @@ fun EmulatorScreen(session: SessionController) {
             },
         )
 
-        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            EmulatorSurface(session = session, modifier = Modifier.fillMaxSize())
-        }
-
-        when (overlay) {
-            Overlay.KEYBOARD -> AdamKeyboard(session = session)
-            Overlay.CONTROLLER -> ControllerPad(
-                session = session,
-                port = 0,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-            )
-            Overlay.NONE -> Unit
+        if (landscape && overlay == Overlay.CONTROLLER) {
+            // Flank the screen so it can render as large as possible: d-pad +
+            // keypad on the left, fire buttons on the right.
+            Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Column(Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp)) {
+                    DPad(controller)
+                    Keypad(controller)
+                }
+                EmulatorSurface(session = session, modifier = Modifier.weight(1f).fillMaxHeight())
+                FireButtons(controller, Modifier.align(Alignment.Bottom).padding(horizontal = 8.dp))
+            }
+        } else {
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                EmulatorSurface(session = session, modifier = Modifier.fillMaxSize())
+            }
+            when (overlay) {
+                Overlay.KEYBOARD -> AdamKeyboard(session = session)
+                Overlay.CONTROLLER -> ControllerRow(
+                    controller,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+                Overlay.NONE -> Unit
+            }
         }
     }
 }

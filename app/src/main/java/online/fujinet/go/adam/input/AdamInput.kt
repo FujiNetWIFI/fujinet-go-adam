@@ -48,13 +48,43 @@ object AdamController {
     }
 }
 
-/** ADAM keyboard byte codes (ASCII-compatible; the EOS keyboard driver reads these). */
+/**
+ * ADAM keyboard byte codes. Printable keys are ASCII; the ADAM special keys use
+ * the EOS codes (0x80-0xAF) the keyboard hardware produces. Values match
+ * ADAMEm's keyboard translation tables.
+ */
 object AdamKeys {
     const val RETURN = 0x0D
     const val BACKSPACE = 0x08
     const val ESCAPE = 0x1B
     const val TAB = 0x09
     const val SPACE = 0x20
+
+    // ADAM function / SmartKeys.
+    const val WP = 0x80          // ESCAPE / WP (word processor)
+    const val SMART_I = 0x81
+    const val SMART_II = 0x82
+    const val SMART_III = 0x83
+    const val SMART_IV = 0x84
+    const val SMART_V = 0x85
+    const val SMART_VI = 0x86
+
+    // ADAM editing block.
+    const val WILDCARD = 0x90
+    const val UNDO = 0x91
+    const val MOVE_COPY = 0x92
+    const val STORE_GET = 0x93
+    const val INSERT = 0x94
+    const val PRINT = 0x95
+    const val CLEAR = 0x96
+    const val DELETE = 0x97
+
+    // Cursor cluster.
+    const val UP = 0xA0
+    const val RIGHT = 0xA1
+    const val DOWN = 0xA2
+    const val LEFT = 0xA3
+    const val HOME = 0xA8
 
     fun char(c: Char): Int = c.code and 0xFF
 }
