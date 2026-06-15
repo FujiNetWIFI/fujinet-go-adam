@@ -44,10 +44,19 @@ private:
 
     void EmulatorThreadMain();
 
+    // Blit rgb565 into window_. Caller must hold surface_mutex_.
+    void PresentLocked(const uint16_t* rgb565, int width, int height);
+
     static constexpr int kBoIpPort = 65216;
 
     mutable std::mutex surface_mutex_;
     ANativeWindow* window_ = nullptr;
+    // Most recent frame, kept so a freshly (re)attached surface can be repainted
+    // immediately -- the ADAM core only emits a frame when the screen changes, so
+    // a surface recreated by a UI toggle would otherwise stay blank until a key.
+    std::vector<uint16_t> last_frame_;
+    int last_frame_w_ = 0;
+    int last_frame_h_ = 0;
 
     std::mutex lifecycle_mutex_;
     std::thread emulator_thread_;

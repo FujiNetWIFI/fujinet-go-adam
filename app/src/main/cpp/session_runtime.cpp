@@ -117,6 +117,11 @@ void SessionRuntime::AttachSurface(JNIEnv* env, jobject surface) {
     if (surface) {
         window_ = ANativeWindow_fromSurface(env, surface);
         LOGI("AttachSurface: window=%p", static_cast<void*>(window_));
+        // Repaint the last frame so a surface recreated by a UI toggle isn't
+        // blank until the core next decides the screen changed.
+        if (!last_frame_.empty()) {
+            PresentLocked(last_frame_.data(), last_frame_w_, last_frame_h_);
+        }
     }
 }
 
@@ -136,6 +141,19 @@ void SessionRuntime::OnFrame(const uint16_t* rgb565, int width, int height) {
         first_frame = false;
         LOGI("First frame: %dx%d window=%p", width, height, static_cast<void*>(window_));
     }
+    if (!rgb565 || width <= 0 || height <= 0) return;
+
+    // Cache so a surface (re)attached later can be repainted without the core.
+    const size_t pixels = static_cast<size_t>(width) * height;
+    if (last_frame_.size() != pixels) last_frame_.resize(pixels);
+    std::memcpy(last_frame_.data(), rgb565, pixels * sizeof(uint16_t));
+    last_frame_w_ = width;
+    last_frame_h_ = height;
+
+    PresentLocked(rgb565, width, height);
+}
+
+void SessionRuntime::PresentLocked(const uint16_t* rgb565, int width, int height) {
     if (!window_ || !rgb565) return;
 
     ANativeWindow_setBuffersGeometry(window_, width, height, WINDOW_FORMAT_RGB_565);

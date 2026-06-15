@@ -49,7 +49,10 @@ fun AdamKeyboard(
     ) {
         // SmartKeys + WP + UNDO + WILD CARD
         Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
-            Key("ESC\nWP", 1.6f) { send(AdamKeys.WP) }
+            // The physical "ESCAPE/WP" key. EOS abort (CONFIG "[ESC] ABORT",
+            // BASIC, etc.) reads ASCII ESC 0x1B; WP 0x80 is SmartWriter-only and
+            // not what software here expects, so send ESCAPE.
+            Key("ESC\nWP", 1.6f) { send(AdamKeys.ESCAPE) }
             Key("I", 1f) { send(AdamKeys.SMART_I) }
             Key("II", 1f) { send(AdamKeys.SMART_II) }
             Key("III", 1f) { send(AdamKeys.SMART_III) }

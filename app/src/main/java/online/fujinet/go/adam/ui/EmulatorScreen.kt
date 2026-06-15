@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
@@ -93,12 +95,16 @@ fun EmulatorScreen(session: SessionController) {
             // Flank the screen so it can render as large as possible: d-pad +
             // keypad on the left, fire buttons on the right.
             Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                Column(Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp)) {
+                Column(
+                    Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     DPad(controller)
+                    Spacer(Modifier.height(16.dp))
                     Keypad(controller)
                 }
                 EmulatorSurface(session = session, modifier = Modifier.weight(1f).fillMaxHeight())
-                FireButtons(controller, Modifier.align(Alignment.Bottom).padding(horizontal = 8.dp))
+                FireButtons(controller, Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp))
             }
         } else {
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
