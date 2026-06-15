@@ -7,20 +7,22 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val FujiOrange = Color(0xFFE8743B)
-private val FujiDark = Color(0xFF101418)
-private val FujiPanel = Color(0xFF1B2026)
+// Accent derived from the ADAM launcher icon's dark-blue background (#10245C),
+// brightened for legibility on the dark UI.
+private val FujiBlue = Color(0xFF4A86E8)
+private val FujiDark = Color(0xFF0B1326)
+private val FujiPanel = Color(0xFF16233F)
 
 private val DarkColors = darkColorScheme(
-    primary = FujiOrange,
-    onPrimary = Color.Black,
+    primary = FujiBlue,
+    onPrimary = Color.White,
     background = FujiDark,
     surface = FujiPanel,
     onSurface = Color(0xFFE6E6E6),
 )
 
 private val LightColors = lightColorScheme(
-    primary = FujiOrange,
+    primary = FujiBlue,
     onPrimary = Color.White,
 )
 
