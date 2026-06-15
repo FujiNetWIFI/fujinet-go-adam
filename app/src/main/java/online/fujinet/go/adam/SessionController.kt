@@ -14,7 +14,7 @@ import kotlin.concurrent.thread
  * in-process FujiNet runtime (joined over AdamNet BoIP on TCP 65216), and
  * forwards input. Supports restarting to apply settings or load a cartridge.
  */
-class SessionController(private val context: Context) {
+class SessionController private constructor(private val context: Context) {
 
     private val settings = SettingsStore(context)
 
@@ -123,8 +123,20 @@ class SessionController(private val context: Context) {
         )
     }
 
-    private companion object {
-        const val TAG = "FujiAdam"
-        const val BOIP_PORT = 65216
+    companion object {
+        @Volatile private var instance: SessionController? = null
+
+        /**
+         * Process-wide singleton so the activity and the foreground service share
+         * one running ADAM session (and a new activity instance after a config
+         * change or relaunch reuses it instead of starting a second emulator).
+         */
+        fun get(context: Context): SessionController =
+            instance ?: synchronized(this) {
+                instance ?: SessionController(context.applicationContext).also { instance = it }
+            }
+
+        private const val TAG = "FujiAdam"
+        private const val BOIP_PORT = 65216
     }
 }

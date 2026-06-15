@@ -40,7 +40,7 @@ import kotlin.concurrent.thread
 private enum class Overlay { NONE, KEYBOARD, CONTROLLER }
 
 @Composable
-fun EmulatorScreen(session: SessionController) {
+fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     var overlay by remember { mutableStateOf(Overlay.CONTROLLER) }
     val context = LocalContext.current
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -89,6 +89,7 @@ fun EmulatorScreen(session: SessionController) {
             onOpenFujiNet = {
                 context.startActivity(Intent(context, FujiNetWebViewActivity::class.java))
             },
+            onShutdown = onShutdown,
         )
 
         if (landscape && overlay == Overlay.CONTROLLER) {
@@ -135,6 +136,7 @@ private fun FunctionBar(
     onCartridge: () -> Unit,
     onSettings: () -> Unit,
     onOpenFujiNet: () -> Unit,
+    onShutdown: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -152,6 +154,7 @@ private fun FunctionBar(
         BarButton("Keys", active = overlay == Overlay.KEYBOARD, onClick = onToggleKeyboard)
         BarButton("Reset", active = false, onClick = onReset)
         BarButton("⚙", active = false, onClick = onSettings)
+        BarButton("⏻ Stop", active = false, onClick = onShutdown)
     }
 }
 
