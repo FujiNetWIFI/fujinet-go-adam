@@ -70,6 +70,7 @@ fun EmulatorScreen(session: SessionController) {
             config = session.config,
             onApply = { session.applyConfig(it) },
             onEjectCartridge = { session.ejectCartridge(); showSettings = false },
+            onResetColeco = { session.resetColeco(); showSettings = false },
             onDismiss = { showSettings = false },
         )
     }
@@ -79,7 +80,7 @@ fun EmulatorScreen(session: SessionController) {
             overlay = overlay,
             onToggleKeyboard = { overlay = if (overlay == Overlay.KEYBOARD) Overlay.NONE else Overlay.KEYBOARD },
             onToggleController = { overlay = if (overlay == Overlay.CONTROLLER) Overlay.NONE else Overlay.CONTROLLER },
-            onReset = { session.reset(coldStart = false) },
+            onReset = { session.resetAdam() },
             onImport = { importPicker.launch(arrayOf("*/*")) },
             onCartridge = { cartPicker.launch(arrayOf("*/*")) },
             onSettings = { showSettings = true },

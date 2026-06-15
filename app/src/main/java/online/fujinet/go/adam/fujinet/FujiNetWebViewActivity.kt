@@ -27,6 +27,8 @@ class FujiNetWebViewActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_URL = "url"
-        const val DEFAULT_URL = "http://127.0.0.1/"
+        // Matches the FujiNet runtime's `-u 0.0.0.0:65214` web-admin bind
+        // (fujinet_android_entry.cpp); reached on loopback.
+        const val DEFAULT_URL = "http://127.0.0.1:65214/"
     }
 }

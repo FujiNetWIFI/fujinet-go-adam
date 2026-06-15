@@ -495,6 +495,10 @@ extern "C" bool fujinet_android_start_runtime(
                 config,
                 "-s",
                 sd,
+                // Web admin UI: bind all interfaces on a fixed port the app's
+                // WebView (FujiNetWebViewActivity) points at on loopback.
+                "-u",
+                "0.0.0.0:65214",
             };
             std::vector<char*> argv;
             argv.reserve(argsStorage.size());

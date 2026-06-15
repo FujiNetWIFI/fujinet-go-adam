@@ -26,6 +26,7 @@ fun SettingsDialog(
     config: SessionConfig,
     onApply: (SessionConfig) -> Unit,
     onEjectCartridge: () -> Unit,
+    onResetColeco: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -54,6 +55,9 @@ fun SettingsDialog(
                     TextButton(onClick = onEjectCartridge, modifier = Modifier.padding(top = 8.dp)) {
                         Text("Eject cartridge")
                     }
+                }
+                TextButton(onClick = onResetColeco, modifier = Modifier.padding(top = 4.dp)) {
+                    Text("ColecoVision reset")
                 }
             }
         },

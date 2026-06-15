@@ -105,7 +105,12 @@ class SessionController(private val context: Context) {
     fun detachSurface() = EmulatorNative.nativeDetachSurface()
 
     fun key(code: Int) = EmulatorNative.nativeInjectKey(code)
-    fun reset(coldStart: Boolean) = EmulatorNative.nativeRequestReset(if (coldStart) 0 else 1)
+
+    /** ADAM "computer reset" switch (EOS/SmartWriter; ResetColeco(0)). */
+    fun resetAdam() = EmulatorNative.nativeRequestReset(0)
+
+    /** ColecoVision reset switch (cartridge side; ResetColeco(1)). */
+    fun resetColeco() = EmulatorNative.nativeRequestReset(1)
 
     fun joystick(
         port: Int,
