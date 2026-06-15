@@ -1,9 +1,12 @@
 package online.fujinet.go.adam
 
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import online.fujinet.go.adam.input.GameControllerMapper
 import online.fujinet.go.adam.ui.EmulatorScreen
 import online.fujinet.go.adam.ui.theme.FujiNetGoAdamTheme
 
@@ -16,6 +19,13 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var session: SessionController
 
+    // Routes Bluetooth/USB game controllers to joystick port 0.
+    private val gamepad by lazy {
+        GameControllerMapper { up, down, left, right, fireL, fireR ->
+            session.joystick(0, up, down, left, right, fireL, fireR)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -25,6 +35,16 @@ class MainActivity : ComponentActivity() {
                 EmulatorScreen(session = session)
             }
         }
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (::session.isInitialized && gamepad.onMotion(event)) return true
+        return super.onGenericMotionEvent(event)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (::session.isInitialized && gamepad.onKey(event)) return true
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onDestroy() {

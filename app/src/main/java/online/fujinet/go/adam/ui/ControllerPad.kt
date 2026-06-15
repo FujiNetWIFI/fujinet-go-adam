@@ -43,6 +43,11 @@ class Controller(private val session: SessionController, private val port: Int) 
     fun down(v: Boolean) { down = v; push() }
     fun left(v: Boolean) { left = v; push() }
     fun right(v: Boolean) { right = v; push() }
+
+    /** Set all four directions at once (analog [JoystickPad] / hardware gamepad). */
+    fun move(up: Boolean, down: Boolean, left: Boolean, right: Boolean) {
+        this.up = up; this.down = down; this.left = left; this.right = right; push()
+    }
     fun fireLeft(v: Boolean) { fireL = v; push() }
     fun fireRight(v: Boolean) { fireR = v; push() }
     fun keypad(v: Int) { keypad = v; push() }
@@ -102,7 +107,7 @@ fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DPad(controller)
+        JoystickPad(controller, size = 132.dp)
         Keypad(controller)
         FireButtons(controller)
     }

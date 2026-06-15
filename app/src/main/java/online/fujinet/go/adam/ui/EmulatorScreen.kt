@@ -99,7 +99,7 @@ fun EmulatorScreen(session: SessionController) {
                     Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    DPad(controller)
+                    JoystickPad(controller)
                     Spacer(Modifier.height(16.dp))
                     Keypad(controller)
                 }
