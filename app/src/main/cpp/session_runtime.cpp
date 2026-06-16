@@ -81,6 +81,8 @@ void SessionRuntime::StartSession(const std::string& runtime_root,
 
     Z80_Running = 1;
     running_.store(true);
+    render_running_.store(true);
+    render_thread_ = std::thread(&SessionRuntime::RenderThreadMain, this);
     emulator_thread_ = std::thread(&SessionRuntime::EmulatorThreadMain, this);
     LOGI("Session started (BoIP %d)", kBoIpPort);
 }
@@ -102,6 +104,16 @@ void SessionRuntime::StopSession() {
     if (emulator_thread_.joinable()) {
         emulator_thread_.join();
     }
+    // Stop the render thread (wake it if it's waiting for a frame).
+    render_running_.store(false);
+    {
+        std::lock_guard<std::mutex> lock(frame_mutex_);
+        frame_dirty_ = true;
+    }
+    frame_cv_.notify_all();
+    if (render_thread_.joinable()) {
+        render_thread_.join();
+    }
     FujiNetAndroid_StopRuntime();
     running_.store(false);
     adamhost_set_frame_sink(nullptr, nullptr);
@@ -117,12 +129,10 @@ void SessionRuntime::AttachSurface(JNIEnv* env, jobject surface) {
     if (surface) {
         window_ = ANativeWindow_fromSurface(env, surface);
         LOGI("AttachSurface: window=%p", static_cast<void*>(window_));
-        // Repaint the last frame so a surface recreated by a UI toggle isn't
-        // blank until the core next decides the screen changed.
-        if (!last_frame_.empty()) {
-            PresentLocked(last_frame_.data(), last_frame_w_, last_frame_h_);
-        }
     }
+    // Repaint the last frame (via the render thread) so a surface recreated by a
+    // UI toggle isn't blank until the core next decides the screen changed.
+    SignalRepaint();
 }
 
 void SessionRuntime::DetachSurface(JNIEnv* env) {
@@ -134,32 +144,69 @@ void SessionRuntime::DetachSurface(JNIEnv* env) {
     }
 }
 
+// Producer: runs on the emulator thread. Only caches the frame and wakes the
+// render thread -- never touches the surface, so a stalled blit (e.g. during a
+// screen recording) can't freeze the emulator and thus AdamNet/FujiNet traffic.
 void SessionRuntime::OnFrame(const uint16_t* rgb565, int width, int height) {
-    std::lock_guard<std::mutex> lock(surface_mutex_);
-    static bool first_frame = true;
-    if (first_frame) {
-        first_frame = false;
-        LOGI("First frame: %dx%d window=%p", width, height, static_cast<void*>(window_));
-    }
     if (!rgb565 || width <= 0 || height <= 0) return;
-
-    // Cache so a surface (re)attached later can be repainted without the core.
     const size_t pixels = static_cast<size_t>(width) * height;
-    if (last_frame_.size() != pixels) last_frame_.resize(pixels);
-    std::memcpy(last_frame_.data(), rgb565, pixels * sizeof(uint16_t));
-    last_frame_w_ = width;
-    last_frame_h_ = height;
-
-    PresentLocked(rgb565, width, height);
+    {
+        std::lock_guard<std::mutex> lock(frame_mutex_);
+        if (last_frame_.size() != pixels) last_frame_.resize(pixels);
+        std::memcpy(last_frame_.data(), rgb565, pixels * sizeof(uint16_t));
+        last_frame_w_ = width;
+        last_frame_h_ = height;
+        frame_dirty_ = true;
+    }
+    frame_cv_.notify_one();
 }
 
-void SessionRuntime::PresentLocked(const uint16_t* rgb565, int width, int height) {
-    if (!window_ || !rgb565) return;
+void SessionRuntime::SignalRepaint() {
+    {
+        std::lock_guard<std::mutex> lock(frame_mutex_);
+        frame_dirty_ = true;
+    }
+    frame_cv_.notify_one();
+}
 
-    ANativeWindow_setBuffersGeometry(window_, width, height, WINDOW_FORMAT_RGB_565);
+void SessionRuntime::RenderThreadMain() {
+    std::vector<uint16_t> scratch;
+    int w = 0, h = 0;
+    while (render_running_.load()) {
+        {
+            std::unique_lock<std::mutex> lock(frame_mutex_);
+            frame_cv_.wait(lock, [this] { return frame_dirty_ || !render_running_.load(); });
+            if (!render_running_.load()) break;
+            frame_dirty_ = false;
+            if (last_frame_.empty()) continue;
+            scratch = last_frame_;  // copy out; release frame_mutex_ before blitting
+            w = last_frame_w_;
+            h = last_frame_h_;
+        }
+        // Grab a ref to the current window without holding it across the blit, so
+        // attach/detach never block behind a stalled ANativeWindow_lock.
+        ANativeWindow* w_local = nullptr;
+        {
+            std::lock_guard<std::mutex> lock(surface_mutex_);
+            if (window_) {
+                w_local = window_;
+                ANativeWindow_acquire(w_local);
+            }
+        }
+        if (w_local) {
+            PresentTo(w_local, scratch.data(), w, h);
+            ANativeWindow_release(w_local);
+        }
+    }
+}
+
+void SessionRuntime::PresentTo(ANativeWindow* w, const uint16_t* rgb565, int width, int height) {
+    if (!w || !rgb565) return;
+
+    ANativeWindow_setBuffersGeometry(w, width, height, WINDOW_FORMAT_RGB_565);
 
     ANativeWindow_Buffer buffer;
-    if (ANativeWindow_lock(window_, &buffer, nullptr) != 0) {
+    if (ANativeWindow_lock(w, &buffer, nullptr) != 0) {
         return;
     }
     const int copy_w = buffer.width < width ? buffer.width : width;
@@ -170,7 +217,7 @@ void SessionRuntime::PresentLocked(const uint16_t* rgb565, int width, int height
                     rgb565 + static_cast<size_t>(y) * width,
                     static_cast<size_t>(copy_w) * 2);
     }
-    ANativeWindow_unlockAndPost(window_);
+    ANativeWindow_unlockAndPost(w);
 }
 
 void SessionRuntime::InjectKey(int adam_char) { adamhost_inject_key(adam_char); }

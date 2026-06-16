@@ -4,6 +4,7 @@
 #include <android/native_window.h>
 
 #include <atomic>
+#include <condition_variable>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -44,19 +45,33 @@ private:
 
     void EmulatorThreadMain();
 
-    // Blit rgb565 into window_. Caller must hold surface_mutex_.
-    void PresentLocked(const uint16_t* rgb565, int width, int height);
+    // Dedicated render thread: blits the latest frame to the surface. Kept off
+    // the emulator thread because ANativeWindow_lock can stall hard (e.g. while
+    // the screen is being recorded) -- if that ran on the emulator thread it
+    // would freeze the Z80 and therefore all AdamNet/FujiNet traffic.
+    void RenderThreadMain();
+    // Blit into w. No lock held; w is a ref the caller acquired.
+    void PresentTo(ANativeWindow* w, const uint16_t* rgb565, int width, int height);
+    void SignalRepaint();  // mark the cached frame dirty + wake the render thread
 
     static constexpr int kBoIpPort = 65216;
 
+    // Surface ownership. Held only briefly (swap the window pointer); never held
+    // across a blit, so attach/detach can't block behind a stalled present.
     mutable std::mutex surface_mutex_;
     ANativeWindow* window_ = nullptr;
-    // Most recent frame, kept so a freshly (re)attached surface can be repainted
-    // immediately -- the ADAM core only emits a frame when the screen changes, so
-    // a surface recreated by a UI toggle would otherwise stay blank until a key.
+
+    // Frame hand-off from the emulator thread (producer) to the render thread.
+    std::mutex frame_mutex_;
+    std::condition_variable frame_cv_;
+    bool frame_dirty_ = false;
+    // Most recent frame, kept so a (re)attached surface can be repainted at once
+    // -- the ADAM core only emits a frame when the screen changes.
     std::vector<uint16_t> last_frame_;
     int last_frame_w_ = 0;
     int last_frame_h_ = 0;
+    std::thread render_thread_;
+    std::atomic<bool> render_running_{false};
 
     std::mutex lifecycle_mutex_;
     std::thread emulator_thread_;
