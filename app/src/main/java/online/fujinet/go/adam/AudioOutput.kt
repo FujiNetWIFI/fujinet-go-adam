@@ -49,6 +49,9 @@ class AudioOutput {
 
         running = true
         feeder = thread(name = "adam-audio") {
+            // Keep the feeder off the regular run queue so a busy device can't
+            // preempt it into an underrun.
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO)
             val buffer = ShortArray(BLOCK_FRAMES)
             while (running) {
                 try {

@@ -13,6 +13,7 @@
  * the screen-refresh drivers (RefreshScreen*) which call PutPixel/PutImage.
  */
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -234,6 +235,19 @@ void Joysticks(void)
        poll here in the headless host. */
 }
 
+/* Sleep (don't spin) until an absolute CLOCK_MONOTONIC time, in microseconds.
+   Frees the CPU between frames -- a busy-wait pegs a core, which on a phone
+   means heat -> thermal throttling -> an unsteady frame rate (audible as a
+   "gallop"). clock_nanosleep(TIMER_ABSTIME) wakes precisely via an hrtimer. */
+static void SleepUntilUs(long target_us)
+{
+    struct timespec ts;
+    ts.tv_sec  = target_us / 1000000L;
+    ts.tv_nsec = (target_us % 1000000L) * 1000L;
+    while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, NULL) == EINTR)
+        ; /* re-sleep if interrupted by a signal */
+}
+
 int CheckScreenRefresh(void)
 {
     static int skipped = 0;
@@ -241,9 +255,7 @@ int CheckScreenRefresh(void)
         NewTimer = ReadTimer();
         OldTimer += 1000000L / (IFreq ? IFreq : 60);
         if ((OldTimer - NewTimer) > 0) {
-            do {
-                NewTimer = ReadTimer();
-            } while ((NewTimer - OldTimer) < 0);
+            SleepUntilUs(OldTimer);     /* sleep to the frame boundary, no spin */
             skipped = 0;
             return 1;
         } else if (++skipped >= (UPeriod ? UPeriod : 2)) {
