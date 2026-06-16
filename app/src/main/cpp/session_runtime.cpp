@@ -4,6 +4,8 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
+#include <sys/resource.h>
+
 #include <cstring>
 
 #define LOG_TAG "AdamSession"
@@ -88,6 +90,12 @@ void SessionRuntime::StartSession(const std::string& runtime_root,
 }
 
 void SessionRuntime::EmulatorThreadMain() {
+    // Run the emulator thread at a raised priority (Android THREAD_PRIORITY_
+    // URGENT_DISPLAY = -8) so it isn't preempted off its 60Hz frame schedule by
+    // background/UI work -- jittery frame timing is what makes the audio tempo
+    // (driven by the per-frame VDP interrupt) sound uneven. Still below the
+    // audio feeder (URGENT_AUDIO = -19), which must never underrun.
+    setpriority(PRIO_PROCESS, 0, -8);
     LOGI("Emulator thread: entering adamem_main with %zu args", argv_.size());
     int rc = adamem_main(static_cast<int>(argv_.size()), argv_.data());
     LOGI("Emulator thread: adamem_main returned %d", rc);
