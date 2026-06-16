@@ -21,7 +21,9 @@
 #include <string.h>
 #include <time.h>
 
+#include <android/choreographer.h>
 #include <android/log.h>
+#include <android/looper.h>
 
 #include "Coleco.h"
 #include "AdamemSDL.h"
@@ -152,6 +154,106 @@ static long ReadTimer(void)
 }
 
 /****************************************************************************/
+/** Vsync phase-lock                                                       **/
+/** Pace frames to the display's hardware vsync (AChoreographer) instead of **/
+/** a wall-clock timer, so the 60Hz frame clock -- and thus the music tempo **/
+/** driven by the per-frame VDP interrupt -- is the panel's refresh and     **/
+/** can't drift/jitter against it. The display is pinned to 60Hz by the     **/
+/** app's Surface.setFrameRate(60), so one vsync == one frame. Engages only **/
+/** while ~60Hz vsyncs are actually arriving; otherwise (screen off, or a    **/
+/** non-60Hz panel) it falls back to the wall-clock sleeper below.          **/
+/****************************************************************************/
+static volatile int    g_vsync_run = 0;
+static pthread_t       g_vsync_tid;
+static pthread_mutex_t g_vsync_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t  g_vsync_cv;              /* MONOTONIC-clocked          */
+static long            g_vsync_ns = 0;          /* latest vsync time (ns)     */
+static long            g_vsync_iv = 0;          /* recent vsync interval (us) */
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+static void vsync_cb(long frameTimeNanos, void *data)
+{
+    static long prev_ns = 0;                    /* vsync thread only          */
+    pthread_mutex_lock(&g_vsync_mtx);
+    if (prev_ns) g_vsync_iv = (frameTimeNanos - prev_ns) / 1000;
+    prev_ns = frameTimeNanos;
+    g_vsync_ns = frameTimeNanos;
+    pthread_cond_broadcast(&g_vsync_cv);
+    pthread_mutex_unlock(&g_vsync_mtx);
+    if (g_vsync_run)
+        AChoreographer_postFrameCallback((AChoreographer *)data, vsync_cb, data);
+}
+
+static void *vsync_main(void *arg)
+{
+    (void)arg;
+    ALooper *looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
+    AChoreographer *ch = looper ? AChoreographer_getInstance() : NULL;
+    if (!ch) { g_vsync_run = 0; return NULL; }
+    AChoreographer_postFrameCallback(ch, vsync_cb, ch);
+    while (g_vsync_run)
+        ALooper_pollOnce(200, NULL, NULL, NULL);
+    return NULL;
+}
+#pragma clang diagnostic pop
+
+static void StartVsync(void)
+{
+    pthread_condattr_t a;
+    if (g_vsync_run) return;
+    pthread_condattr_init(&a);
+    pthread_condattr_setclock(&a, CLOCK_MONOTONIC);
+    pthread_cond_init(&g_vsync_cv, &a);
+    pthread_condattr_destroy(&a);
+    g_vsync_run = 1;
+    if (pthread_create(&g_vsync_tid, NULL, vsync_main, NULL) != 0)
+        g_vsync_run = 0;
+}
+
+static void StopVsync(void)
+{
+    if (!g_vsync_run) return;
+    g_vsync_run = 0;
+    pthread_mutex_lock(&g_vsync_mtx);
+    pthread_cond_broadcast(&g_vsync_cv);
+    pthread_mutex_unlock(&g_vsync_mtx);
+    pthread_join(g_vsync_tid, NULL);
+}
+
+/* True while ~60Hz vsyncs are arriving (display attached, on, at 60Hz). */
+static int VsyncFresh(long now_us)
+{
+    int fresh;
+    if (!g_vsync_run) return 0;
+    pthread_mutex_lock(&g_vsync_mtx);
+    fresh = g_vsync_ns != 0 &&
+            (now_us - g_vsync_ns / 1000) < 100000 &&     /* fresh (<100ms)     */
+            g_vsync_iv >= 15000 && g_vsync_iv <= 18500;  /* ~55-66Hz           */
+    pthread_mutex_unlock(&g_vsync_mtx);
+    return fresh;
+}
+
+/* Block until a vsync at/after target_us; return that vsync time (us). Bails on
+   a short timeout so it can never hang if vsyncs stop while we're waiting. */
+static long WaitVsync(long target_us)
+{
+    long v;
+    pthread_mutex_lock(&g_vsync_mtx);
+    while (g_vsync_run && g_vsync_ns / 1000 < target_us) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        ts.tv_nsec += 40000000L;                /* 40ms safety timeout        */
+        if (ts.tv_nsec >= 1000000000L) { ts.tv_sec++; ts.tv_nsec -= 1000000000L; }
+        if (pthread_cond_timedwait(&g_vsync_cv, &g_vsync_mtx, &ts) == ETIMEDOUT)
+            break;
+    }
+    v = g_vsync_ns / 1000;
+    pthread_mutex_unlock(&g_vsync_mtx);
+    return v;
+}
+
+/****************************************************************************/
 /** Lifecycle                                                              **/
 /****************************************************************************/
 int InitMachine(void)
@@ -192,12 +294,15 @@ int InitMachine(void)
     if (syncemu)
         OldTimer = ReadTimer();
 
+    StartVsync();   /* phase-lock frame pacing to the display refresh */
+
     LOGI("InitMachine: %dx%d frame buffer, EmuMode=%d palette=%d", width, height, EmuMode, PalNum);
     return 1;
 }
 
 void TrashMachine(void)
 {
+    StopVsync();
     if (DisplayBuf) {
         free(DisplayBuf);
         DisplayBuf = NULL;
@@ -251,21 +356,39 @@ static void SleepUntilUs(long target_us)
 int CheckScreenRefresh(void)
 {
     static int skipped = 0;
-    if (syncemu) {
-        NewTimer = ReadTimer();
-        OldTimer += 1000000L / (IFreq ? IFreq : 60);
+    if (!syncemu) return 2;
+
+    NewTimer = ReadTimer();
+    OldTimer += 1000000L / (IFreq ? IFreq : 60);
+
+    if (VsyncFresh(NewTimer)) {
+        /* Phase-locked: present on the next display vsync at/after the target,
+           then snap the schedule to that vsync so frames stay 1:1 with refresh
+           with no wall-clock drift. */
         if ((OldTimer - NewTimer) > 0) {
-            SleepUntilUs(OldTimer);     /* sleep to the frame boundary, no spin */
+            OldTimer = WaitVsync(OldTimer);
             skipped = 0;
             return 1;
         } else if (++skipped >= (UPeriod ? UPeriod : 2)) {
-            OldTimer = ReadTimer();
+            OldTimer = NewTimer;
             skipped = 0;
             return 1;
         }
         return 0;
     }
-    return 2;
+
+    /* No usable display vsync (screen off / backgrounded / non-60Hz panel):
+       fall back to the wall-clock sleeper. */
+    if ((OldTimer - NewTimer) > 0) {
+        SleepUntilUs(OldTimer);
+        skipped = 0;
+        return 1;
+    } else if (++skipped >= (UPeriod ? UPeriod : 2)) {
+        OldTimer = NewTimer;
+        skipped = 0;
+        return 1;
+    }
+    return 0;
 }
 
 /****************************************************************************/
