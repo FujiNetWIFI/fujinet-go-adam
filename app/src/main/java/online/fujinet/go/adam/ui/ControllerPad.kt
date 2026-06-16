@@ -99,7 +99,9 @@ fun Keypad(controller: Controller, modifier: Modifier = Modifier) {
     }
 }
 
-/** D-pad, keypad and fire buttons together, for the stacked (portrait) layout. */
+/** Joystick + keypad and fire buttons together, for the stacked (portrait)
+ *  layout: the keypad sits under the joystick halo so the row stays narrow
+ *  enough that the fire buttons don't run off the right edge on a phone. */
 @Composable
 fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
     Row(
@@ -107,8 +109,13 @@ fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        JoystickPad(controller, size = 132.dp)
-        Keypad(controller)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            JoystickPad(controller, size = 132.dp)
+            Keypad(controller)
+        }
         FireButtons(controller)
     }
 }
