@@ -188,6 +188,7 @@ static void vsync_cb(long frameTimeNanos, void *data)
 static void *vsync_main(void *arg)
 {
     (void)arg;
+    pthread_setname_np(pthread_self(), "adam-vsync");
     ALooper *looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
     AChoreographer *ch = looper ? AChoreographer_getInstance() : NULL;
     if (!ch) { g_vsync_run = 0; return NULL; }
@@ -234,13 +235,25 @@ static int VsyncFresh(long now_us)
     return fresh;
 }
 
-/* Block until a vsync at/after target_us; return that vsync time (us). Bails on
-   a short timeout so it can never hang if vsyncs stop while we're waiting. */
-static long WaitVsync(long target_us)
+/* Block until the *next* display vsync after the one we last presented on, and
+   return its time (us). Pacing one emulated frame per vsync locks the machine to
+   the panel refresh (~60Hz here, gated by VsyncFresh) with nothing to overshoot.
+
+   The previous version waited for a vsync at/after a wall-clock target that
+   advanced by a fixed 1000000/60 = 16666us per frame. On any panel whose true
+   period is below that -- i.e. running even a hair above 60.00Hz, which "60Hz"
+   panels routinely do -- the on-time vsync fell just short of the target and was
+   rejected, so every frame waited two vsync intervals: a rock-steady 30fps (the
+   "31 fps, 0 behind, on vsync" we measured). Waiting for the vsync counter to
+   simply advance removes the target entirely and is self-correcting: if a frame's
+   work overruns a vsync, the next call returns at once instead of stalling.
+   Bails on a short timeout so it can never hang if vsyncs stop mid-wait. */
+static long WaitNextVsync(void)
 {
+    static long last_ns = 0;
     long v;
     pthread_mutex_lock(&g_vsync_mtx);
-    while (g_vsync_run && g_vsync_ns / 1000 < target_us) {
+    while (g_vsync_run && g_vsync_ns <= last_ns) {
         struct timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
         ts.tv_nsec += 40000000L;                /* 40ms safety timeout        */
@@ -248,6 +261,7 @@ static long WaitVsync(long target_us)
         if (pthread_cond_timedwait(&g_vsync_cv, &g_vsync_mtx, &ts) == ETIMEDOUT)
             break;
     }
+    last_ns = g_vsync_ns;
     v = g_vsync_ns / 1000;
     pthread_mutex_unlock(&g_vsync_mtx);
     return v;
@@ -361,20 +375,36 @@ int CheckScreenRefresh(void)
     NewTimer = ReadTimer();
     OldTimer += 1000000L / (IFreq ? IFreq : 60);
 
-    if (VsyncFresh(NewTimer)) {
-        /* Phase-locked: present on the next display vsync at/after the target,
-           then snap the schedule to that vsync so frames stay 1:1 with refresh
-           with no wall-clock drift. */
-        if ((OldTimer - NewTimer) > 0) {
-            OldTimer = WaitVsync(OldTimer);
-            skipped = 0;
-            return 1;
-        } else if (++skipped >= (UPeriod ? UPeriod : 2)) {
-            OldTimer = NewTimer;
-            skipped = 0;
-            return 1;
+    /* Pacing diagnostics: once per real second, report the achieved emulated
+       frame rate, how many frames the emulator couldn't keep up with ("behind"),
+       and how many used the vsync phase-lock vs the wall-clock fallback. Reading:
+         ~60 fps, 0 behind        -> emulation is real-time; any perceived slowness
+                                     is render/display or thermal, not the core.
+         ~30 fps, mostly behind   -> compute-bound (can't finish a frame in 16.7ms).
+         ~30 fps, 0 behind        -> the pacer itself is over-throttling (e.g. a
+                                     90Hz panel forcing a 2-vsync wait per frame). */
+    int vfresh = VsyncFresh(NewTimer);
+    {
+        static long dbg_t0 = 0;
+        static int  dbg_frames = 0, dbg_behind = 0, dbg_vsync = 0;
+        if (dbg_t0 == 0) dbg_t0 = NewTimer;
+        dbg_frames++;
+        if (vfresh) dbg_vsync++;
+        if ((OldTimer - NewTimer) <= 0) dbg_behind++;
+        if (NewTimer - dbg_t0 >= 1000000L) {
+            LOGI("pace: %d fps over %ld ms (%d behind, %d on vsync)",
+                 dbg_frames, (NewTimer - dbg_t0) / 1000, dbg_behind, dbg_vsync);
+            dbg_t0 = NewTimer; dbg_frames = 0; dbg_behind = 0; dbg_vsync = 0;
         }
-        return 0;
+    }
+
+    if (vfresh) {
+        /* Locked to the display: one emulated frame per vsync == the panel
+           refresh (~60Hz here). Snap OldTimer to the vsync so a later fall back
+           to the wall-clock sleeper picks up from real time. */
+        OldTimer = WaitNextVsync();
+        skipped = 0;
+        return 1;
     }
 
     /* No usable display vsync (screen off / backgrounded / non-60Hz panel):

@@ -1,7 +1,7 @@
 package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,13 +11,21 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Gamepad
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
@@ -30,10 +38,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import online.fujinet.go.adam.MediaImport
+import online.fujinet.go.adam.R
 import online.fujinet.go.adam.SessionController
 import online.fujinet.go.adam.fujinet.FujiNetWebViewActivity
 import kotlin.concurrent.thread
@@ -78,9 +91,10 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
         )
     }
 
-    // Edge-to-edge is enforced on recent Android, so keep the controls clear of
-    // the status bar, the gesture/navigation bar and any display cutout (the
-    // bottom keyboard/joystick row was being hidden behind the nav bar).
+    // MainActivity enables edge-to-edge on every API level, so keep the controls
+    // clear of the status bar, the gesture/navigation bar and any display cutout
+    // (without this the top menu bar hid under the status bar on older devices,
+    // and the bottom keyboard/joystick row behind the nav bar).
     Column(modifier = Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
         FunctionBar(
             overlay = overlay,
@@ -108,7 +122,10 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
                     Spacer(Modifier.height(16.dp))
                     Keypad(controller)
                 }
-                EmulatorSurface(session = session, modifier = Modifier.weight(1f).fillMaxHeight())
+                Column(Modifier.weight(1f).fillMaxHeight()) {
+                    SmartKeyBar(controller, Modifier.fillMaxWidth())
+                    EmulatorSurface(session = session, modifier = Modifier.fillMaxWidth().weight(1f))
+                }
                 FireButtons(controller, Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp))
             }
         } else {
@@ -117,13 +134,15 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
             }
             when (overlay) {
                 Overlay.KEYBOARD -> AdamKeyboard(session = session)
-                Overlay.CONTROLLER -> ControllerRow(
-                    controller,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                )
+                Overlay.CONTROLLER -> Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+                    SmartKeyBar(controller, Modifier.fillMaxWidth())
+                    ControllerRow(
+                        controller,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
                 Overlay.NONE -> Unit
             }
         }
@@ -145,33 +164,59 @@ private fun FunctionBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+            .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        BarButton("FujiNet", active = false, onClick = onOpenFujiNet)
-        BarButton("Import", active = false, onClick = onImport)
-        BarButton("Cart", active = false, onClick = onCartridge)
-        BarButton("Joy", active = overlay == Overlay.CONTROLLER, onClick = onToggleController)
-        BarButton("Keys", active = overlay == Overlay.KEYBOARD, onClick = onToggleKeyboard)
-        BarButton("Reset", active = false, onClick = onReset)
-        BarButton("⚙", active = false, onClick = onSettings)
-        BarButton("⏻ Stop", active = false, onClick = onShutdown)
+        BarButton(Icons.Filled.Keyboard, "Keyboard", Modifier.weight(1f), overlay == Overlay.KEYBOARD, onToggleKeyboard)
+        BarButton(Icons.Filled.Gamepad, "Joystick", Modifier.weight(1f), overlay == Overlay.CONTROLLER, onToggleController)
+        BarButton(Icons.Filled.Upload, "Import media", Modifier.weight(1f), onClick = onImport)
+        BarButton(Icons.Filled.Memory, "Load cartridge", Modifier.weight(1f), onClick = onCartridge)
+        BarButton(Icons.Filled.RestartAlt, "Reset", Modifier.weight(1f), onClick = onReset)
+        FujiNetBarButton(Modifier.weight(1f), onClick = onOpenFujiNet)
+        BarButton(Icons.Filled.Settings, "Settings", Modifier.weight(1f), onClick = onSettings)
+        BarButton(Icons.Filled.PowerSettingsNew, "Power off", Modifier.weight(1f), onClick = onShutdown)
+    }
+}
+
+/**
+ * The FujiNet web-UI button: the FujiNet "dot" logo, its white tile tinted to the
+ * UI accent (Modulate keeps the black centre dot black and the corners
+ * transparent, recolouring only the white). Matches the other Go-family apps.
+ */
+@Composable
+private fun FujiNetBarButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.fujinet_toolbar),
+            contentDescription = "FujiNet web UI",
+            modifier = Modifier.size(24.dp),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.Modulate),
+        )
     }
 }
 
 @Composable
-private fun BarButton(label: String, active: Boolean, onClick: () -> Unit) {
-    val tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-    Text(
-        label,
-        color = tint,
-        style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier
-            .clickable { onClick() }
-            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(6.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    )
+private fun BarButton(
+    icon: ImageVector,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+        )
+    }
 }

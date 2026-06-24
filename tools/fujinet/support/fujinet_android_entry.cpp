@@ -1,4 +1,6 @@
 #include <android/log.h>
+#include <pthread.h>
+#include <sys/system_properties.h>
 #include <unistd.h>
 
 #include <cstdio>
@@ -175,11 +177,36 @@ void append_log_chunk_locked(const char* data, size_t size) {
     }
 }
 
+// One of these is logged per ~1KB block read on the DDP/disk path, which floods
+// the console during a config-disk or TNFS boot and buries the actual failure.
+// They carry no signal beyond "a block was read"; mounts, read completions, Fuji
+// commands, errors and resets are not matched and so are always kept.
+bool is_per_block_log_line(const std::string& line) {
+    return line.rfind("BLOCK: ", 0) == 0 || line.rfind("DDP READ", 0) == 0;
+}
+
+// Opt-in firehose suppression for a clean repro log, toggled without a rebuild:
+//   adb shell setprop debug.fujinet.quietblocks 1
+// Default off, so logs are unchanged unless explicitly requested. Read once.
+bool suppress_per_block_logs() {
+    static const bool suppress = []() {
+        char value[PROP_VALUE_MAX] = {0};
+        if (__system_property_get("debug.fujinet.quietblocks", value) <= 0) {
+            return false;
+        }
+        return value[0] == '1' || value[0] == 't' || value[0] == 'T';
+    }();
+    return suppress;
+}
+
 void forward_logcat_line(std::string line) {
     if (!line.empty() && line.back() == '\r') {
         line.pop_back();
     }
     if (line.empty()) {
+        return;
+    }
+    if (suppress_per_block_logs() && is_per_block_log_line(line)) {
         return;
     }
     __android_log_print(ANDROID_LOG_INFO, "FujiNetConsole", "%s", line.c_str());
@@ -275,6 +302,7 @@ void start_log_capture(const std::string& runtime_root) {
     setvbuf(stderr, nullptr, _IONBF, 0);
 
     std::thread log_thread([read_fd = log_pipe[0]]() {
+        pthread_setname_np(pthread_self(), "fujinet-log");
         char buffer[1024];
         std::string pending_line;
 
@@ -480,6 +508,7 @@ extern "C" bool fujinet_android_start_runtime(
 
     try {
         g_runtime_thread = std::thread([runtimeRoot, config, sd]() {
+            pthread_setname_np(pthread_self(), "fujinet-svc");
             start_log_capture(runtimeRoot);
             if (chdir(runtimeRoot.c_str()) != 0) {
                 std::lock_guard<std::mutex> lock(g_mutex);

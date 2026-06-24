@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import online.fujinet.go.adam.input.GameControllerMapper
@@ -43,6 +44,12 @@ class MainActivity : ComponentActivity() {
             shutdown()
             return
         }
+        // Draw edge-to-edge on every API level. The system only auto-enforces it
+        // on API 35+, so without this call WindowInsets aren't dispatched the same
+        // way on older devices and EmulatorScreen's safeDrawingPadding gets a zero
+        // top inset -- the top menu bar (FunctionBar) then hides under the status
+        // bar (reported on a Fire tablet running Android 9 / API 28).
+        enableEdgeToEdge()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         session = SessionController.get(applicationContext)
 

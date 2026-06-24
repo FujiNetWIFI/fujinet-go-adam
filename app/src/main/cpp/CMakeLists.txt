@@ -62,6 +62,15 @@ set_source_files_properties(
         PROPERTIES COMPILE_FLAGS "-w -fcommon"
 )
 
+# Optimise the whole emulator library regardless of build type. The Z80
+# interpreter AND the per-frame RefreshScreen pixel loops in adam_host.c are hot;
+# at the NDK debug default (-O0) they are several times slower, which drops the
+# emulated machine below real time on weaker devices. target_compile_options is
+# emitted after CMAKE_C_FLAGS_<CONFIG>, so the trailing -O2 wins over a debug -O0;
+# -g (debugSymbolLevel=FULL) still emits the symbols/CFI a tombstone needs, so
+# crash symbolication is unaffected.
+target_compile_options(adamcore PRIVATE -O2)
+
 target_include_directories(adamcore PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${ADAMEM_ANDROID_DIR}

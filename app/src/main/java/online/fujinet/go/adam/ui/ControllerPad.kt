@@ -1,12 +1,14 @@
 package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import online.fujinet.go.adam.input.AdamKeys
 import online.fujinet.go.adam.SessionController
 
 /**
@@ -51,6 +54,9 @@ class Controller(private val session: SessionController, private val port: Int) 
     fun fireLeft(v: Boolean) { fireL = v; push() }
     fun fireRight(v: Boolean) { fireR = v; push() }
     fun keypad(v: Int) { keypad = v; push() }
+
+    /** Tap an ADAM keyboard key (SmartKeys / ESC): momentary, into the key buffer. */
+    fun key(code: Int) = session.key(code)
 }
 
 @Composable
@@ -117,6 +123,42 @@ fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
             Keypad(controller)
         }
         FireButtons(controller)
+    }
+}
+
+/**
+ * ESC plus the six ADAM SmartKeys (I-VI) as momentary taps, for the joystick
+ * page: software driven by the joystick (SmartBASIC, games, CONFIG) often still
+ * needs the SmartKeys and ESC without opening the full keyboard.
+ */
+@Composable
+fun SmartKeyBar(controller: Controller, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TapKey("ESC", Modifier.weight(1.4f)) { controller.key(AdamKeys.ESCAPE) }
+        TapKey("I", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_I) }
+        TapKey("II", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_II) }
+        TapKey("III", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_III) }
+        TapKey("IV", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_IV) }
+        TapKey("V", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_V) }
+        TapKey("VI", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_VI) }
+    }
+}
+
+/** A momentary (single-tap) key button, sized by the caller's weight. */
+@Composable
+private fun TapKey(label: String, modifier: Modifier = Modifier, onTap: () -> Unit) {
+    Box(
+        modifier = modifier
+            .height(40.dp)
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
+            .clickable { onTap() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
     }
 }
 

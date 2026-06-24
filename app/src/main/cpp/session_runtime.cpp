@@ -4,6 +4,7 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
+#include <pthread.h>
 #include <sys/resource.h>
 
 #include <cstring>
@@ -90,6 +91,12 @@ void SessionRuntime::StartSession(const std::string& runtime_root,
 }
 
 void SessionRuntime::EmulatorThreadMain() {
+    // Name the thread so a native tombstone identifies it. Without this, every
+    // native worker inherits the comm name of its creator -- the Kotlin
+    // "adam-bootstrap" thread that calls nativeStartSession -- so unrelated
+    // crashes in the emulator, render, vsync, or FujiNet threads all show up as
+    // "adam-bootstrap" and can't be told apart.
+    pthread_setname_np(pthread_self(), "adam-emu");
     // Run the emulator thread at a raised priority (Android THREAD_PRIORITY_
     // URGENT_DISPLAY = -8) so it isn't preempted off its 60Hz frame schedule by
     // background/UI work -- jittery frame timing is what makes the audio tempo
@@ -178,6 +185,7 @@ void SessionRuntime::SignalRepaint() {
 }
 
 void SessionRuntime::RenderThreadMain() {
+    pthread_setname_np(pthread_self(), "adam-render");
     std::vector<uint16_t> scratch;
     int w = 0, h = 0;
     while (render_running_.load()) {

@@ -188,24 +188,24 @@ extern "C" bool FujiNetAndroid_StartRuntime(
 }
 
 extern "C" void FujiNetAndroid_StopRuntime() {
-    void* library_handle = nullptr;
     StopRuntimeFn stop_runtime = nullptr;
     ClearAudioFn clear_audio = nullptr;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
-        if (!g_running && g_library_handle == nullptr) {
+        if (!g_running) {
             return;
         }
         stop_runtime = g_stop_runtime;
         clear_audio = g_clear_audio;
-        library_handle = g_library_handle;
-        g_library_handle = nullptr;
-        g_start_runtime = nullptr;
-        g_stop_runtime = nullptr;
-        g_last_error_message = nullptr;
-        g_read_audio = nullptr;
-        g_clear_audio = nullptr;
-        g_copy_recent_log = nullptr;
+        // Keep g_library_handle and the resolved symbols resident: do NOT dlclose
+        // libfujinet.so here. The FujiNet runtime owns background threads (web
+        // admin, network listeners, timers) that live inside that library, and
+        // dlclose unmaps its code. Any such thread that outlives the unmap -- even
+        // briefly -- then executes freed code and crashes with a SIGSEGV whose
+        // tombstone is a single unknown frame at a per-run (ASLR) address, with
+        // pc == lr == fault addr. Leaving the library mapped for the process
+        // lifetime is the standard Android pattern; a later StartRuntime reuses
+        // the existing handle (load_fujinet_library_locked short-circuits).
         g_running = false;
     }
 
@@ -214,9 +214,6 @@ extern "C" void FujiNetAndroid_StopRuntime() {
     }
     if (clear_audio != nullptr) {
         clear_audio();
-    }
-    if (library_handle != nullptr) {
-        dlclose(library_handle);
     }
 }
 

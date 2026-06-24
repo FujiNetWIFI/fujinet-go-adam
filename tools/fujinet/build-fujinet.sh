@@ -369,6 +369,63 @@ patch("components_pc/libssh/src/misc.c", [
     ),
 ], required=False)
 
+# --- pc_rtos task shim: name worker threads after their FreeRTOS task ------
+# Every FujiNet "task" (xTaskCreate*) runs here as a detached std::thread. Naming
+# it makes a native tombstone identify the failing task -- e.g. "adamnet_bus" (the
+# disk/block-read worker) -- instead of "adam-bootstrap", the misleading comm name
+# a detached thread otherwise inherits from whatever thread spawned it.
+patch("lib/compat/pc_rtos/pc_rtos.cpp", [
+    (
+        '#include <mutex>\n'
+        '#include <thread>\n',
+        '#include <mutex>\n'
+        '#include <pthread.h>\n'
+        '#include <thread>\n',
+    ),
+    (
+        'static BaseType_t pc_task_create(TaskFunction_t fn, void *arg, TaskHandle_t *out_handle)\n'
+        '{\n'
+        '    std::thread t([fn, arg] { fn(arg); });\n'
+        '    t.detach();\n',
+        'static BaseType_t pc_task_create(TaskFunction_t fn, const char *name, void *arg, TaskHandle_t *out_handle)\n'
+        '{\n'
+        '    std::thread t([fn, arg, name] {\n'
+        '        if (name && *name) {\n'
+        '            char tn[16];\n'
+        '            strncpy(tn, name, sizeof(tn) - 1);\n'
+        '            tn[sizeof(tn) - 1] = 0;\n'
+        '            pthread_setname_np(pthread_self(), tn);\n'
+        '        }\n'
+        '        fn(arg);\n'
+        '    });\n'
+        '    t.detach();\n',
+    ),
+    (
+        'extern "C" BaseType_t xTaskCreate(TaskFunction_t fn, const char *, uint32_t, void *arg,\n'
+        '                                  UBaseType_t, TaskHandle_t *out_handle)\n'
+        '{\n'
+        '    return pc_task_create(fn, arg, out_handle);\n'
+        '}\n',
+        'extern "C" BaseType_t xTaskCreate(TaskFunction_t fn, const char *name, uint32_t, void *arg,\n'
+        '                                  UBaseType_t, TaskHandle_t *out_handle)\n'
+        '{\n'
+        '    return pc_task_create(fn, name, arg, out_handle);\n'
+        '}\n',
+    ),
+    (
+        'extern "C" BaseType_t xTaskCreatePinnedToCore(TaskFunction_t fn, const char *, uint32_t, void *arg,\n'
+        '                                              UBaseType_t, TaskHandle_t *out_handle, BaseType_t)\n'
+        '{\n'
+        '    return pc_task_create(fn, arg, out_handle);\n'
+        '}\n',
+        'extern "C" BaseType_t xTaskCreatePinnedToCore(TaskFunction_t fn, const char *name, uint32_t, void *arg,\n'
+        '                                              UBaseType_t, TaskHandle_t *out_handle, BaseType_t)\n'
+        '{\n'
+        '    return pc_task_create(fn, name, arg, out_handle);\n'
+        '}\n',
+    ),
+])
+
 # NOTE: The AdamNet BoIP response-deadline fix (don't drop block-device ACKs on
 # the 300us hardware window over BoIP, while keeping it for single-shot
 # char/network devices so a late TNFS reply can't pollute the stream) lives
