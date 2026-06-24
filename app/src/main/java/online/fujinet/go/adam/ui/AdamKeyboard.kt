@@ -1,5 +1,6 @@
 package online.fujinet.go.adam.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -115,10 +117,11 @@ private fun RowScope.Key(
     active: Boolean = false,
     onTap: () -> Unit,
 ) {
+    val compact = compactKeyboard()
     Box(
         modifier = Modifier
             .weight(weight)
-            .height(44.dp)
+            .height(if (compact) 28.dp else 44.dp)
             .background(
                 if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                 RoundedCornerShape(6.dp),
@@ -130,9 +133,20 @@ private fun RowScope.Key(
         Text(
             label,
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 11.sp,
-            lineHeight = 12.sp,
+            fontSize = if (compact) 9.sp else 11.sp,
+            lineHeight = if (compact) 10.sp else 12.sp,
             textAlign = TextAlign.Center,
         )
     }
+}
+
+/**
+ * The on-screen keyboard's keys shrink to a compact height on TV and other short
+ * screens (e.g. landscape) so it doesn't fill most of the display.
+ */
+@Composable
+private fun compactKeyboard(): Boolean {
+    val config = LocalConfiguration.current
+    val isTv = (config.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
+    return isTv || config.screenHeightDp < 480
 }
