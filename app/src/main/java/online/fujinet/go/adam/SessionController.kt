@@ -82,8 +82,12 @@ class SessionController private constructor(private val context: Context) {
             "-eos", p.eosRom,
             "-wp", p.wpRom,
             "-fujinet", BOIP_PORT.toString(),
-            "-palette", config.palette.toString(),
+            "-palette", PALETTE_NAMES.indexOf(config.palette).coerceAtLeast(0).toString(),
+            "-expansion", EXPANSION_NAMES.indexOf(config.expansion).coerceAtLeast(0).toString(),
+            "-joystick", JOYSTICK_NAMES.indexOf(config.joystick).coerceAtLeast(0).toString(),
         )
+        if (config.swapButtons == "Yes") args += listOf("-swapbuttons", "1")
+        if (config.reverseKeypad == "Yes") args += listOf("-keypad", "1")
         config.cartPath?.let { cart ->
             if (File(cart).exists()) {
                 args += listOf("-cart", cart)
