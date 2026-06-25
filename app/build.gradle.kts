@@ -123,8 +123,8 @@ android {
         applicationId = "online.fujinet.go.adam"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.7.2"
+        versionCode = 3 
+        versionName = "0.8.0"
         buildConfigField("String", "ADAMEM_VERSION", "\"${adamemVersion}\"")
         buildConfigField("String", "FUJINET_RUNTIME_VERSION", "\"${fujiNetRuntimeVersion}\"")
 
