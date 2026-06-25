@@ -13,7 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Gamepad
@@ -53,6 +59,7 @@ import kotlin.concurrent.thread
 
 private enum class Overlay { NONE, KEYBOARD, CONTROLLER }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     var overlay by remember { mutableStateOf(Overlay.CONTROLLER) }
@@ -95,7 +102,18 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     // clear of the status bar, the gesture/navigation bar and any display cutout
     // (without this the top menu bar hid under the status bar on older devices,
     // and the bottom keyboard/joystick row behind the nav bar).
-    Column(modifier = Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
+    //
+    // We deliberately do NOT use Modifier.safeDrawingPadding(): its inset is
+    // visibility-aware, and on Android 11 / API 30 the status bar is reported as
+    // occupying no space (top inset == 0), so the toolbar slid back under it even
+    // after removing the legacy windowFullscreen flag. systemBarsIgnoringVisibility
+    // always reports the bars' real size, so the toolbar clears the status bar on
+    // every API level; union with the cutout and the (visibility-aware) IME inset
+    // keeps the rest of safeDrawing's behaviour.
+    val safeInsets = WindowInsets.systemBarsIgnoringVisibility
+        .union(WindowInsets.displayCutout)
+        .union(WindowInsets.ime)
+    Column(modifier = Modifier.fillMaxSize().background(Color.Black).windowInsetsPadding(safeInsets)) {
         FunctionBar(
             overlay = overlay,
             onToggleKeyboard = { overlay = if (overlay == Overlay.KEYBOARD) Overlay.NONE else Overlay.KEYBOARD },
