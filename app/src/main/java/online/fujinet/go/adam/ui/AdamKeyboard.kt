@@ -115,8 +115,9 @@ fun AdamKeyboard(
     }
 }
 
-// Bright highlight for the D-pad / TV-remote focused key.
-private val FocusAmber = Color(0xFFFFC107)
+// Bright highlight for the D-pad / TV-remote focused key. Shared with the
+// on-screen Coleco keypad ([Keypad]), which is focus-driven the same way.
+internal val FocusAmber = Color(0xFFFFC107)
 
 @Composable
 private fun RowScope.Key(

@@ -55,7 +55,7 @@ private enum class Overlay { NONE, KEYBOARD, CONTROLLER }
 
 @Composable
 fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
-    var overlay by remember { mutableStateOf(Overlay.CONTROLLER) }
+    var overlay by remember { mutableStateOf(Overlay.KEYBOARD) }
     val context = LocalContext.current
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val controller = rememberController(session, port = 0)

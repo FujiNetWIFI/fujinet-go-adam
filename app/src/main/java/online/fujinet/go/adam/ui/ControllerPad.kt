@@ -1,8 +1,12 @@
 package online.fujinet.go.adam.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +20,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -85,7 +95,13 @@ fun FireButtons(controller: Controller, modifier: Modifier = Modifier) {
     }
 }
 
-/** The 12-key ColecoVision keypad (1-9, *, 0, #), momentary per press. */
+/**
+ * The 12-key ColecoVision keypad (1-9, *, 0, #), momentary per press. Each key is
+ * touch-driven on a phone and focus-driven on a TV: the keys are [focusable] so the
+ * remote's D-pad can move between them and OK/Enter presses the highlighted one --
+ * games that select with the Coleco keypad (skill level, etc.) need this when the
+ * joystick is driven by a gamepad and there's no touchscreen.
+ */
 @Composable
 fun Keypad(controller: Controller, modifier: Modifier = Modifier) {
     val rows = listOf(
@@ -98,10 +114,64 @@ fun Keypad(controller: Controller, modifier: Modifier = Modifier) {
         for (row in rows) {
             Row {
                 for ((label, value) in row) {
-                    HoldKey(label, { down -> controller.keypad(if (down) value else -1) }, size = 40.dp)
+                    KeypadKey(label, value, controller)
                 }
             }
         }
+    }
+}
+
+/**
+ * One Coleco keypad button. The value is *held* while pressed (set on press/key-down,
+ * cleared to -1 on release/key-up) rather than pulsed on a single tap: the emulator
+ * polls the controller register per frame, so a value present for only an instant can
+ * fall between frames and a polling game would never see it.
+ */
+@Composable
+private fun KeypadKey(
+    label: String,
+    value: Int,
+    controller: Controller,
+    size: Dp = 40.dp,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(6.dp)
+    val bg = if (focused) FocusAmber else MaterialTheme.colorScheme.surface
+    val fg = if (focused) Color.Black else MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier = Modifier
+            .padding(4.dp)
+            .size(size)
+            .background(bg, shape)
+            .then(if (focused) Modifier.border(3.dp, Color.White, shape) else Modifier)
+            // Touch (phone): hold to press the key, release to clear it.
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    controller.keypad(value)
+                    try {
+                        awaitRelease()
+                    } finally {
+                        controller.keypad(-1)
+                    }
+                })
+            }
+            // TV remote / gamepad: the D-pad navigates here and OK/Enter holds the key.
+            .onKeyEvent { ev ->
+                if (ev.key == Key.DirectionCenter || ev.key == Key.Enter || ev.key == Key.NumPadEnter) {
+                    when (ev.type) {
+                        KeyEventType.KeyDown -> { controller.keypad(value); true }
+                        KeyEventType.KeyUp -> { controller.keypad(-1); true }
+                        else -> false
+                    }
+                } else {
+                    false
+                }
+            }
+            .focusable(interactionSource = interaction),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = fg, style = MaterialTheme.typography.titleMedium)
     }
 }
 
