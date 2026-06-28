@@ -12,9 +12,10 @@ import android.view.KeyEvent
  * model, so only key-down matters; [onKey] feeds the code and returns true when it
  * consumed the event.
  *
- * Only events from a real *alphabetic* keyboard device are consumed, and the D-pad
- * cluster (arrows + OK) is always left to Compose focus navigation so a TV remote
- * keeps driving the on-screen keyboard rather than typing.
+ * Only events from a real *alphabetic* keyboard device are consumed. A D-pad cluster
+ * event is left to Compose focus navigation only when it comes from a TV remote /
+ * gamepad (marked SOURCE_DPAD); arrows typed on a keyboard reach the ADAM (see
+ * isDpadNavigation()).
  */
 class HardwareKeyboard(private val onKey: (code: Int) -> Unit) {
 
@@ -53,9 +54,7 @@ internal fun mapAdamKey(event: KeyEvent): Int? {
 
 /**
  * Map the Android keycodes for non-printable / special keys to their ADAM byte.
- * Pure (no [KeyEvent] instance) so it can be unit-tested. The cursor keys are
- * intentionally absent -- they navigate the on-screen keyboard (see
- * isDpadNavigation()); use the on-screen cursor cluster to move the ADAM cursor.
+ * Pure (no [KeyEvent] instance) so it can be unit-tested.
  */
 internal fun specialAdamCode(androidKeyCode: Int): Int? = when (androidKeyCode) {
     KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> AdamKeys.RETURN
@@ -65,19 +64,28 @@ internal fun specialAdamCode(androidKeyCode: Int): Int? = when (androidKeyCode) 
     KeyEvent.KEYCODE_DEL -> AdamKeys.BACKSPACE          // Backspace
     KeyEvent.KEYCODE_FORWARD_DEL -> AdamKeys.DELETE
     KeyEvent.KEYCODE_MOVE_HOME -> AdamKeys.HOME
+    // Cursor keys reach this table only for events isDpadNavigation() let through,
+    // i.e. typed on a keyboard rather than a TV remote / gamepad D-pad. DPAD_CENTER
+    // has no ADAM equivalent, so it is never forwarded.
+    KeyEvent.KEYCODE_DPAD_UP -> AdamKeys.UP
+    KeyEvent.KEYCODE_DPAD_DOWN -> AdamKeys.DOWN
+    KeyEvent.KEYCODE_DPAD_LEFT -> AdamKeys.LEFT
+    KeyEvent.KEYCODE_DPAD_RIGHT -> AdamKeys.RIGHT
     else -> null
 }
 
 /**
  * True for the keys that must navigate/activate the on-screen keyboard rather than
- * type into the emulator. The arrows and DPAD_CENTER are always reserved. A remote's
- * "OK" can arrive as ENTER; it carries a D-pad source, whereas a typing keyboard's
- * Enter does not -- so keyboard Enter still reaches the ADAM as RETURN.
+ * type into the emulator. The D-pad cluster (arrows, DPAD_CENTER) and a remote's
+ * "OK"/ENTER are reserved only when they carry a D-pad source -- i.e. they come from a
+ * TV remote or gamepad. A typing keyboard's arrows and Enter carry no SOURCE_DPAD, so
+ * they fall through and reach the ADAM (arrows as cursor codes, Enter as RETURN) --
+ * e.g. to drive the FujiNet CONFIG selection bar.
  */
 private fun isDpadNavigation(event: KeyEvent): Boolean = when (event.keyCode) {
     KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
     KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
-    KeyEvent.KEYCODE_DPAD_CENTER -> true
+    KeyEvent.KEYCODE_DPAD_CENTER,
     KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER ->
         event.source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
     else -> false

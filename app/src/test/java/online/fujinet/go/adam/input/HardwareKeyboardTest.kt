@@ -36,13 +36,15 @@ class HardwareKeyboardTest {
     }
 
     @Test
-    fun cursorKeysAreReservedForNavigationNotTyping() {
-        // The cursor cluster drives on-screen-keyboard focus (TV remote), so it is
-        // not in the typing table; isDpadNavigation() filters it ahead of this lookup.
-        assertNull(specialAdamCode(KeyEvent.KEYCODE_DPAD_LEFT))
-        assertNull(specialAdamCode(KeyEvent.KEYCODE_DPAD_RIGHT))
-        assertNull(specialAdamCode(KeyEvent.KEYCODE_DPAD_UP))
-        assertNull(specialAdamCode(KeyEvent.KEYCODE_DPAD_DOWN))
+    fun cursorKeysMapToAdamCursorCodesForTyping() {
+        // Cursor keys typed on a keyboard reach the ADAM (e.g. the FujiNet CONFIG
+        // selection bar). isDpadNavigation() routes a TV remote's D-pad (SOURCE_DPAD)
+        // to focus navigation before this keycode lookup is consulted.
+        assertEquals(AdamKeys.LEFT, specialAdamCode(KeyEvent.KEYCODE_DPAD_LEFT))
+        assertEquals(AdamKeys.RIGHT, specialAdamCode(KeyEvent.KEYCODE_DPAD_RIGHT))
+        assertEquals(AdamKeys.UP, specialAdamCode(KeyEvent.KEYCODE_DPAD_UP))
+        assertEquals(AdamKeys.DOWN, specialAdamCode(KeyEvent.KEYCODE_DPAD_DOWN))
+        // DPAD_CENTER has no ADAM equivalent and is never forwarded.
         assertNull(specialAdamCode(KeyEvent.KEYCODE_DPAD_CENTER))
     }
 }
