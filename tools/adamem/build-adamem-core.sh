@@ -21,7 +21,7 @@ PROJECT_ROOT=$(cd -- "${SCRIPT_DIR}/../.." &>/dev/null && pwd)
 # Source location (override with ADAMEM_SRC=/path bash build-adamem-core.sh)
 SOURCE_DIR="${ADAMEM_SRC:-${HOME}/Workspace/adamem_sdl}"
 SOURCE_BRANCH="fujinet-adamnet-bridge"
-SOURCE_COMMIT="d0f79b0"
+SOURCE_COMMIT="d129799"
 
 GENERATED_SOURCE_ROOT="${PROJECT_ROOT}/app/src/main/cpp-generated/adamem"
 GENERATED_ASSET_ROOT="${PROJECT_ROOT}/app/src/main/assets-generated/adamem"
