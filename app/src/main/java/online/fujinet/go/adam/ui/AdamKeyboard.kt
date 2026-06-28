@@ -2,7 +2,10 @@ package online.fujinet.go.adam.ui
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -110,6 +115,9 @@ fun AdamKeyboard(
     }
 }
 
+// Bright highlight for the D-pad / TV-remote focused key.
+private val FocusAmber = Color(0xFFFFC107)
+
 @Composable
 private fun RowScope.Key(
     label: String,
@@ -118,21 +126,30 @@ private fun RowScope.Key(
     onTap: () -> Unit,
 ) {
     val compact = compactKeyboard()
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(6.dp)
+    // On a TV the keys are driven by the remote's D-pad, so the focused key must read
+    // clearly from across the room: a bright amber fill with a thick white outline.
+    val bg = when {
+        focused -> FocusAmber
+        active -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val fg = if (focused) Color.Black else MaterialTheme.colorScheme.onSurface
     Box(
         modifier = Modifier
             .weight(weight)
             .height(if (compact) 28.dp else 44.dp)
-            .background(
-                if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                RoundedCornerShape(6.dp),
-            )
-            .clickable { onTap() }
+            .background(bg, shape)
+            .then(if (focused) Modifier.border(3.dp, Color.White, shape) else Modifier)
+            .clickable(interactionSource = interaction, indication = ripple()) { onTap() }
             .padding(horizontal = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = fg,
             fontSize = if (compact) 9.sp else 11.sp,
             lineHeight = if (compact) 10.sp else 12.sp,
             textAlign = TextAlign.Center,

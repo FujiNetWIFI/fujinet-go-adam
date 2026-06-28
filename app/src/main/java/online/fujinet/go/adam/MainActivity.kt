@@ -14,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import online.fujinet.go.adam.input.GameControllerMapper
+import online.fujinet.go.adam.input.HardwareKeyboard
 import online.fujinet.go.adam.ui.EmulatorScreen
 import online.fujinet.go.adam.ui.theme.FujiNetGoAdamTheme
 
@@ -34,6 +35,9 @@ class MainActivity : ComponentActivity() {
             session.joystick(0, up, down, left, right, fireL, fireR)
         }
     }
+
+    // Routes an attached hardware keyboard to the ADAM keyboard.
+    private val keyboard by lazy { HardwareKeyboard { code -> session.key(code) } }
 
     private val requestNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* best effort */ }
@@ -92,7 +96,12 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (::session.isInitialized && gamepad.onKey(event)) return true
+        if (::session.isInitialized) {
+            // Game controller first, then a hardware keyboard. A TV remote's D-pad is
+            // claimed by neither, so it falls through to Compose focus navigation.
+            if (gamepad.onKey(event)) return true
+            if (keyboard.onKey(event)) return true
+        }
         return super.dispatchKeyEvent(event)
     }
 
