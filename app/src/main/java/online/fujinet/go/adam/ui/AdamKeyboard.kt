@@ -126,7 +126,7 @@ private fun RowScope.Key(
     active: Boolean = false,
     onTap: () -> Unit,
 ) {
-    val compact = compactKeyboard()
+    val compact = compactControls()
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val shape = RoundedCornerShape(6.dp)
@@ -137,7 +137,13 @@ private fun RowScope.Key(
         active -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.surface
     }
-    val fg = if (focused) Color.Black else MaterialTheme.colorScheme.onSurface
+    // The focused (amber) and active (periwinkle primary) fills are both light,
+    // so their label inverts to dark; resting keys keep the light onSurface label.
+    val fg = when {
+        focused -> Color.Black
+        active -> MaterialTheme.colorScheme.onPrimary
+        else -> MaterialTheme.colorScheme.onSurface
+    }
     Box(
         modifier = Modifier
             .weight(weight)
@@ -159,11 +165,13 @@ private fun RowScope.Key(
 }
 
 /**
- * The on-screen keyboard's keys shrink to a compact height on TV and other short
- * screens (e.g. landscape) so it doesn't fill most of the display.
+ * On-screen controls shrink to compact sizes on TV and other short screens --
+ * landscape, and small foldable cover displays like the razr's -- so they don't
+ * fill the display or run off the bottom. Shared by the keyboard ([Key]) and the
+ * joystick page's keypad / fire buttons / SmartKeys (see ControllerPad).
  */
 @Composable
-private fun compactKeyboard(): Boolean {
+internal fun compactControls(): Boolean {
     val config = LocalConfiguration.current
     val isTv = (config.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
     return isTv || config.screenHeightDp < 480

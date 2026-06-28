@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ADAM launcher icon background: dark blue. -->
-    <color name="ic_launcher_background">#10245C</color>
+    <!-- ADAM launcher icon background: light periwinkle blue (matches the
+         original Play Store icon); also the UI accent. -->
+    <color name="ic_launcher_background">#8D84E5</color>
 </resources>

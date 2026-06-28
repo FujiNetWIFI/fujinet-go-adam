@@ -112,15 +112,18 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
 
         if (landscape && overlay == Overlay.CONTROLLER) {
             // Flank the screen so it can render as large as possible: d-pad +
-            // keypad on the left, fire buttons on the right.
+            // keypad on the left, fire buttons on the right. A phone's landscape
+            // height is short, so the joystick + 4-row keypad column is compacted;
+            // at full size its bottom keypad row (* 0 #) ran off the screen.
+            val compact = compactControls()
             Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 Column(
                     Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    JoystickPad(controller)
-                    Spacer(Modifier.height(16.dp))
-                    Keypad(controller)
+                    JoystickPad(controller, size = if (compact) 132.dp else 176.dp)
+                    Spacer(Modifier.height(if (compact) 8.dp else 16.dp))
+                    Keypad(controller, keySize = if (compact) 30.dp else 40.dp)
                 }
                 Column(Modifier.weight(1f).fillMaxHeight()) {
                     SmartKeyBar(controller, Modifier.fillMaxWidth())
@@ -200,6 +203,10 @@ private fun FujiNetBarButton(modifier: Modifier = Modifier, onClick: () -> Unit)
     }
 }
 
+// Active/selected toolbar tint. The periwinkle accent is light, so its onPrimary
+// is black, which would vanish on the dark bar; the selected tab reads white.
+private val AdamActiveTint = Color.White
+
 @Composable
 private fun BarButton(
     icon: ImageVector,
@@ -216,7 +223,7 @@ private fun BarButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+            tint = if (active) AdamActiveTint else MaterialTheme.colorScheme.primary,
         )
     }
 }

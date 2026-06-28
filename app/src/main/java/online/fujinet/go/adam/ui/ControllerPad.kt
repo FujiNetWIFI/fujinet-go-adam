@@ -87,11 +87,24 @@ fun DPad(controller: Controller, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun FireButtons(controller: Controller, modifier: Modifier = Modifier) {
+fun FireButtons(controller: Controller, modifier: Modifier = Modifier, compact: Boolean = false) {
+    val size = if (compact) 44.dp else 56.dp
     Row(modifier = modifier, verticalAlignment = Alignment.Bottom) {
-        HoldKey("L", controller::fireLeft, color = MaterialTheme.colorScheme.primary)
+        // Fire buttons use the periwinkle accent fill, so their label is the
+        // dark onPrimary rather than the light onSurface the dark keys use.
+        HoldKey(
+            "L", controller::fireLeft,
+            size = size,
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        )
         Spacer(Modifier.size(12.dp))
-        HoldKey("R", controller::fireRight, color = MaterialTheme.colorScheme.primary)
+        HoldKey(
+            "R", controller::fireRight,
+            size = size,
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        )
     }
 }
 
@@ -103,7 +116,7 @@ fun FireButtons(controller: Controller, modifier: Modifier = Modifier) {
  * joystick is driven by a gamepad and there's no touchscreen.
  */
 @Composable
-fun Keypad(controller: Controller, modifier: Modifier = Modifier) {
+fun Keypad(controller: Controller, modifier: Modifier = Modifier, keySize: Dp = 40.dp) {
     val rows = listOf(
         listOf("1" to 1, "2" to 2, "3" to 3),
         listOf("4" to 4, "5" to 5, "6" to 6),
@@ -114,7 +127,7 @@ fun Keypad(controller: Controller, modifier: Modifier = Modifier) {
         for (row in rows) {
             Row {
                 for ((label, value) in row) {
-                    KeypadKey(label, value, controller)
+                    KeypadKey(label, value, controller, size = keySize)
                 }
             }
         }
@@ -180,6 +193,9 @@ private fun KeypadKey(
  *  enough that the fire buttons don't run off the right edge on a phone. */
 @Composable
 fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
+    // Short screens (foldable cover displays like the razr's, where the stacked
+    // joystick + keypad would otherwise run off the bottom) get smaller controls.
+    val compact = compactControls()
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -187,12 +203,12 @@ fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 8.dp),
         ) {
-            JoystickPad(controller, size = 132.dp)
-            Keypad(controller)
+            JoystickPad(controller, size = if (compact) 96.dp else 132.dp)
+            Keypad(controller, keySize = if (compact) 30.dp else 40.dp)
         }
-        FireButtons(controller)
+        FireButtons(controller, compact = compact)
     }
 }
 
@@ -204,7 +220,7 @@ fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
 @Composable
 fun SmartKeyBar(controller: Controller, modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+        modifier = modifier.padding(horizontal = 4.dp, vertical = if (compactControls()) 2.dp else 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -223,7 +239,7 @@ fun SmartKeyBar(controller: Controller, modifier: Modifier = Modifier) {
 private fun TapKey(label: String, modifier: Modifier = Modifier, onTap: () -> Unit) {
     Box(
         modifier = modifier
-            .height(40.dp)
+            .height(if (compactControls()) 32.dp else 40.dp)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
             .clickable { onTap() },
         contentAlignment = Alignment.Center,
@@ -239,6 +255,7 @@ private fun HoldKey(
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
     color: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Box(
         modifier = modifier
@@ -257,6 +274,6 @@ private fun HoldKey(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
+        Text(label, color = contentColor, style = MaterialTheme.typography.titleMedium)
     }
 }
