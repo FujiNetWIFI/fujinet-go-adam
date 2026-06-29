@@ -49,10 +49,12 @@ add_library(
 # ADAMEm core compile defines: little-endian host, SDL option-globals path
 # (no real SDL -- adamem_android provides shim headers), IDE hard disk support,
 # and the SN76489/AY PSG sound emulation (driven into an AudioTrack, not SDL).
+# ADAM_SOUND_QUEUE applies sound-register writes on the audio thread via a
+# timestamped queue, so changes follow the AudioTrack clock, not vsync.
 set_source_files_properties(
         ${ADAMEM_CORE_SOURCES}
         "${CMAKE_CURRENT_SOURCE_DIR}/adam_host.c"
-        PROPERTIES COMPILE_DEFINITIONS "SDL;LSB_FIRST;IDEHD;SOUND;SOUND_PSG"
+        PROPERTIES COMPILE_DEFINITIONS "SDL;LSB_FIRST;IDEHD;SOUND;SOUND_PSG;ADAM_SOUND_QUEUE"
 )
 
 # The ADAMEm sources are pre-C11 K&R-ish C with many benign warnings; keep them
