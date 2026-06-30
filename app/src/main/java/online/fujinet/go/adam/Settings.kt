@@ -41,6 +41,18 @@ val YES_NO = listOf("No", "Yes")
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("fujiadam", Context.MODE_PRIVATE)
 
+    /**
+     * Haptic feedback toggles. Kept out of [SessionConfig] (and its Apply→restart
+     * path) so flipping them takes effect live, without restarting the emulator.
+     */
+    var keyboardHapticsEnabled: Boolean
+        get() = prefs.getBoolean(KEY_KEYBOARD_HAPTICS, true)
+        set(value) { prefs.edit().putBoolean(KEY_KEYBOARD_HAPTICS, value).apply() }
+
+    var joystickHapticsEnabled: Boolean
+        get() = prefs.getBoolean(KEY_JOYSTICK_HAPTICS, true)
+        set(value) { prefs.edit().putBoolean(KEY_JOYSTICK_HAPTICS, value).apply() }
+
     var config: SessionConfig
         get() = SessionConfig(
             palette = prefs.getString(KEY_PALETTE, null)?.takeIf { it in PALETTE_NAMES } ?: PALETTE_NAMES[0],
@@ -68,5 +80,7 @@ class SettingsStore(context: Context) {
         const val KEY_SWAP_BUTTONS = "swapButtons"
         const val KEY_REVERSE_KEYPAD = "reverseKeypad"
         const val KEY_CART = "cart"
+        const val KEY_KEYBOARD_HAPTICS = "keyboardHaptics"
+        const val KEY_JOYSTICK_HAPTICS = "joystickHaptics"
     }
 }

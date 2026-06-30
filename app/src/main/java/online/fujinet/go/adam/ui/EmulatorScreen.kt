@@ -61,6 +61,8 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     val controller = rememberController(session, port = 0)
 
     var showSettings by remember { mutableStateOf(false) }
+    var keyboardHaptics by remember { mutableStateOf(session.keyboardHapticsEnabled) }
+    var joystickHaptics by remember { mutableStateOf(session.joystickHapticsEnabled) }
 
     val importPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -84,7 +86,11 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     if (showSettings) {
         SettingsDialog(
             config = session.config,
+            keyboardHaptics = keyboardHaptics,
+            joystickHaptics = joystickHaptics,
             onApply = { session.applyConfig(it) },
+            onKeyboardHapticsChange = { keyboardHaptics = it; session.keyboardHapticsEnabled = it },
+            onJoystickHapticsChange = { joystickHaptics = it; session.joystickHapticsEnabled = it },
             onEjectCartridge = { session.ejectCartridge(); showSettings = false },
             onResetColeco = { session.resetColeco(); showSettings = false },
             onDismiss = { showSettings = false },
@@ -121,29 +127,30 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
                     Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    JoystickPad(controller, size = if (compact) 132.dp else 176.dp)
+                    JoystickPad(controller, size = if (compact) 132.dp else 176.dp, hapticsEnabled = joystickHaptics)
                     Spacer(Modifier.height(if (compact) 8.dp else 16.dp))
-                    Keypad(controller, keySize = if (compact) 30.dp else 40.dp)
+                    Keypad(controller, keySize = if (compact) 30.dp else 40.dp, hapticsEnabled = joystickHaptics)
                 }
                 Column(Modifier.weight(1f).fillMaxHeight()) {
-                    SmartKeyBar(controller, Modifier.fillMaxWidth())
+                    SmartKeyBar(controller, Modifier.fillMaxWidth(), hapticsEnabled = joystickHaptics)
                     EmulatorSurface(session = session, modifier = Modifier.fillMaxWidth().weight(1f))
                 }
-                FireButtons(controller, Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp))
+                FireButtons(controller, Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp), hapticsEnabled = joystickHaptics)
             }
         } else {
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 EmulatorSurface(session = session, modifier = Modifier.fillMaxSize())
             }
             when (overlay) {
-                Overlay.KEYBOARD -> AdamKeyboard(session = session)
+                Overlay.KEYBOARD -> AdamKeyboard(session = session, hapticsEnabled = keyboardHaptics)
                 Overlay.CONTROLLER -> Column(Modifier.background(MaterialTheme.colorScheme.background)) {
-                    SmartKeyBar(controller, Modifier.fillMaxWidth())
+                    SmartKeyBar(controller, Modifier.fillMaxWidth(), hapticsEnabled = joystickHaptics)
                     ControllerRow(
                         controller,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 8.dp),
+                        hapticsEnabled = joystickHaptics,
                     )
                 }
                 Overlay.NONE -> Unit

@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -87,8 +88,15 @@ fun DPad(controller: Controller, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun FireButtons(controller: Controller, modifier: Modifier = Modifier, compact: Boolean = false) {
+fun FireButtons(
+    controller: Controller,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    hapticsEnabled: Boolean = true,
+) {
     val size = if (compact) 44.dp else 56.dp
+    val emit = rememberFujiHaptic(FujiHapticPattern.KeyPress)
+    val onHaptic = { if (hapticsEnabled) emit() }
     Row(modifier = modifier, verticalAlignment = Alignment.Bottom) {
         // Fire buttons use the periwinkle accent fill, so their label is the
         // dark onPrimary rather than the light onSurface the dark keys use.
@@ -97,6 +105,7 @@ fun FireButtons(controller: Controller, modifier: Modifier = Modifier, compact: 
             size = size,
             color = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
+            onHaptic = onHaptic,
         )
         Spacer(Modifier.size(12.dp))
         HoldKey(
@@ -104,6 +113,7 @@ fun FireButtons(controller: Controller, modifier: Modifier = Modifier, compact: 
             size = size,
             color = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
+            onHaptic = onHaptic,
         )
     }
 }
@@ -116,18 +126,25 @@ fun FireButtons(controller: Controller, modifier: Modifier = Modifier, compact: 
  * joystick is driven by a gamepad and there's no touchscreen.
  */
 @Composable
-fun Keypad(controller: Controller, modifier: Modifier = Modifier, keySize: Dp = 40.dp) {
+fun Keypad(
+    controller: Controller,
+    modifier: Modifier = Modifier,
+    keySize: Dp = 40.dp,
+    hapticsEnabled: Boolean = true,
+) {
     val rows = listOf(
         listOf("1" to 1, "2" to 2, "3" to 3),
         listOf("4" to 4, "5" to 5, "6" to 6),
         listOf("7" to 7, "8" to 8, "9" to 9),
         listOf("*" to 10, "0" to 0, "#" to 11),
     )
+    val emit = rememberFujiHaptic(FujiHapticPattern.KeyPress)
+    val onHaptic = { if (hapticsEnabled) emit() }
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         for (row in rows) {
             Row {
                 for ((label, value) in row) {
-                    KeypadKey(label, value, controller, size = keySize)
+                    KeypadKey(label, value, controller, size = keySize, onHaptic = onHaptic)
                 }
             }
         }
@@ -146,12 +163,14 @@ private fun KeypadKey(
     value: Int,
     controller: Controller,
     size: Dp = 40.dp,
+    onHaptic: () -> Unit = {},
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val shape = RoundedCornerShape(6.dp)
     val bg = if (focused) FocusAmber else MaterialTheme.colorScheme.surface
     val fg = if (focused) Color.Black else MaterialTheme.colorScheme.onSurface
+    val currentHaptic = rememberUpdatedState(onHaptic)
     Box(
         modifier = Modifier
             .padding(4.dp)
@@ -161,6 +180,7 @@ private fun KeypadKey(
             // Touch (phone): hold to press the key, release to clear it.
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
+                    currentHaptic.value()
                     controller.keypad(value)
                     try {
                         awaitRelease()
@@ -173,7 +193,7 @@ private fun KeypadKey(
             .onKeyEvent { ev ->
                 if (ev.key == Key.DirectionCenter || ev.key == Key.Enter || ev.key == Key.NumPadEnter) {
                     when (ev.type) {
-                        KeyEventType.KeyDown -> { controller.keypad(value); true }
+                        KeyEventType.KeyDown -> { onHaptic(); controller.keypad(value); true }
                         KeyEventType.KeyUp -> { controller.keypad(-1); true }
                         else -> false
                     }
@@ -192,7 +212,11 @@ private fun KeypadKey(
  *  layout: the keypad sits under the joystick halo so the row stays narrow
  *  enough that the fire buttons don't run off the right edge on a phone. */
 @Composable
-fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
+fun ControllerRow(
+    controller: Controller,
+    modifier: Modifier = Modifier,
+    hapticsEnabled: Boolean = true,
+) {
     // Short screens (foldable cover displays like the razr's, where the stacked
     // joystick + keypad would otherwise run off the bottom) get smaller controls.
     val compact = compactControls()
@@ -205,10 +229,10 @@ fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 8.dp),
         ) {
-            JoystickPad(controller, size = if (compact) 96.dp else 132.dp)
-            Keypad(controller, keySize = if (compact) 30.dp else 40.dp)
+            JoystickPad(controller, size = if (compact) 96.dp else 132.dp, hapticsEnabled = hapticsEnabled)
+            Keypad(controller, keySize = if (compact) 30.dp else 40.dp, hapticsEnabled = hapticsEnabled)
         }
-        FireButtons(controller, compact = compact)
+        FireButtons(controller, compact = compact, hapticsEnabled = hapticsEnabled)
     }
 }
 
@@ -218,30 +242,41 @@ fun ControllerRow(controller: Controller, modifier: Modifier = Modifier) {
  * needs the SmartKeys and ESC without opening the full keyboard.
  */
 @Composable
-fun SmartKeyBar(controller: Controller, modifier: Modifier = Modifier) {
+fun SmartKeyBar(
+    controller: Controller,
+    modifier: Modifier = Modifier,
+    hapticsEnabled: Boolean = true,
+) {
+    val emit = rememberFujiHaptic(FujiHapticPattern.KeyPress)
+    val onHaptic = { if (hapticsEnabled) emit() }
     Row(
         modifier = modifier.padding(horizontal = 4.dp, vertical = if (compactControls()) 2.dp else 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TapKey("ESC", Modifier.weight(1.4f)) { controller.key(AdamKeys.ESCAPE) }
-        TapKey("I", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_I) }
-        TapKey("II", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_II) }
-        TapKey("III", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_III) }
-        TapKey("IV", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_IV) }
-        TapKey("V", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_V) }
-        TapKey("VI", Modifier.weight(1f)) { controller.key(AdamKeys.SMART_VI) }
+        TapKey("ESC", Modifier.weight(1.4f), onHaptic) { controller.key(AdamKeys.ESCAPE) }
+        TapKey("I", Modifier.weight(1f), onHaptic) { controller.key(AdamKeys.SMART_I) }
+        TapKey("II", Modifier.weight(1f), onHaptic) { controller.key(AdamKeys.SMART_II) }
+        TapKey("III", Modifier.weight(1f), onHaptic) { controller.key(AdamKeys.SMART_III) }
+        TapKey("IV", Modifier.weight(1f), onHaptic) { controller.key(AdamKeys.SMART_IV) }
+        TapKey("V", Modifier.weight(1f), onHaptic) { controller.key(AdamKeys.SMART_V) }
+        TapKey("VI", Modifier.weight(1f), onHaptic) { controller.key(AdamKeys.SMART_VI) }
     }
 }
 
 /** A momentary (single-tap) key button, sized by the caller's weight. */
 @Composable
-private fun TapKey(label: String, modifier: Modifier = Modifier, onTap: () -> Unit) {
+private fun TapKey(
+    label: String,
+    modifier: Modifier = Modifier,
+    onHaptic: () -> Unit = {},
+    onTap: () -> Unit,
+) {
     Box(
         modifier = modifier
             .height(if (compactControls()) 32.dp else 40.dp)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
-            .clickable { onTap() },
+            .clickable { onHaptic(); onTap() },
         contentAlignment = Alignment.Center,
     ) {
         Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
@@ -256,7 +291,11 @@ private fun HoldKey(
     size: Dp = 56.dp,
     color: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    onHaptic: () -> Unit = {},
 ) {
+    // Keyed on Unit so an unrelated recomposition never restarts the gesture (which
+    // would release a held key mid-press); the latest haptic is read via the State.
+    val currentHaptic = rememberUpdatedState(onHaptic)
     Box(
         modifier = modifier
             .padding(4.dp)
@@ -264,6 +303,7 @@ private fun HoldKey(
             .background(color, if (size < 48.dp) RoundedCornerShape(6.dp) else CircleShape)
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
+                    currentHaptic.value()
                     onHold(true)
                     try {
                         awaitRelease()

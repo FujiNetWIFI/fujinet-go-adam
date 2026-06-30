@@ -38,14 +38,24 @@ import kotlin.math.roundToInt
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun JoystickPad(controller: Controller, modifier: Modifier = Modifier, size: Dp = 176.dp) {
+fun JoystickPad(
+    controller: Controller,
+    modifier: Modifier = Modifier,
+    size: Dp = 176.dp,
+    hapticsEnabled: Boolean = true,
+) {
     var padSize by remember { mutableStateOf(IntSize.Zero) }
     var nub by remember { mutableStateOf(PointF(0f, 0f)) }
     var pointerId by remember { mutableStateOf<Int?>(null) }
+    // Last reported direction bits, so we can tick once each time the digital
+    // direction changes (entering a new direction), like a real switch detent.
+    val lastDir = remember { intArrayOf(0) }
+    val emit = rememberFujiHaptic(FujiHapticPattern.JoystickTick)
 
     fun reset() {
         pointerId = null
         nub = PointF(0f, 0f)
+        lastDir[0] = 0
         controller.move(up = false, down = false, left = false, right = false)
     }
 
@@ -53,12 +63,15 @@ fun JoystickPad(controller: Controller, modifier: Modifier = Modifier, size: Dp 
         val ax = axis(px, padSize.width)
         val ay = axis(py, padSize.height)
         nub = PointF(ax, ay)
-        controller.move(
-            up = ay <= -DIR_THRESHOLD,
-            down = ay >= DIR_THRESHOLD,
-            left = ax <= -DIR_THRESHOLD,
-            right = ax >= DIR_THRESHOLD,
-        )
+        val up = ay <= -DIR_THRESHOLD
+        val down = ay >= DIR_THRESHOLD
+        val left = ax <= -DIR_THRESHOLD
+        val right = ax >= DIR_THRESHOLD
+        val dir = (if (up) 1 else 0) or (if (down) 2 else 0) or
+            (if (left) 4 else 0) or (if (right) 8 else 0)
+        if (hapticsEnabled && dir != 0 && dir != lastDir[0]) emit()
+        lastDir[0] = dir
+        controller.move(up = up, down = down, left = left, right = right)
     }
 
     Box(

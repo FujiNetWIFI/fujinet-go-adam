@@ -14,6 +14,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,7 +39,11 @@ import online.fujinet.go.adam.YES_NO
 @Composable
 fun SettingsDialog(
     config: SessionConfig,
+    keyboardHaptics: Boolean,
+    joystickHaptics: Boolean,
     onApply: (SessionConfig) -> Unit,
+    onKeyboardHapticsChange: (Boolean) -> Unit,
+    onJoystickHapticsChange: (Boolean) -> Unit,
     onEjectCartridge: () -> Unit,
     onResetColeco: () -> Unit,
     onDismiss: () -> Unit,
@@ -67,6 +72,13 @@ fun SettingsDialog(
                 OptionRow("Swap joystick buttons", YES_NO, draft.swapButtons) { draft = draft.copy(swapButtons = it) }
                 OptionRow("Reverse keypad", YES_NO, draft.reverseKeypad) { draft = draft.copy(reverseKeypad = it) }
 
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text("Haptics", style = MaterialTheme.typography.titleSmall)
+                // Haptics apply live (no session restart), so they call back immediately
+                // rather than going through the draft/Apply path the machine options use.
+                ToggleRow("Keyboard haptics", keyboardHaptics, onKeyboardHapticsChange)
+                ToggleRow("Joystick haptics", joystickHaptics, onJoystickHapticsChange)
+
                 if (config.cartPath != null) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     TextButton(onClick = { onEjectCartridge(); onDismiss() }) {
@@ -80,6 +92,22 @@ fun SettingsDialog(
             }
         },
     )
+}
+
+@Composable
+private fun ToggleRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
 
 @Composable

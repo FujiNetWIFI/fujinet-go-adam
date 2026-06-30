@@ -43,9 +43,12 @@ import online.fujinet.go.adam.input.AdamKeys
 fun AdamKeyboard(
     session: SessionController,
     modifier: Modifier = Modifier,
+    hapticsEnabled: Boolean = true,
 ) {
     var shift by remember { mutableStateOf(false) }
-    fun send(code: Int) = session.key(code)
+    val emit = rememberFujiHaptic(FujiHapticPattern.KeyPress)
+    val onHaptic = { if (hapticsEnabled) emit() }
+    fun send(code: Int) { onHaptic(); session.key(code) }
 
     Column(
         modifier = modifier
@@ -97,7 +100,7 @@ fun AdamKeyboard(
             Key("RTN", 1.5f) { send(AdamKeys.RETURN) }
         }
         Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(3.dp)) {
-            Key(if (shift) "SHIFT*" else "shift", 1.6f, active = shift) { shift = !shift }
+            Key(if (shift) "SHIFT*" else "shift", 1.6f, active = shift) { onHaptic(); shift = !shift }
             for (c in (if (shift) "ZXCVBNM<>" else "zxcvbnm,.")) {
                 Key(c.toString(), 1f) { send(AdamKeys.char(c)) }
             }
