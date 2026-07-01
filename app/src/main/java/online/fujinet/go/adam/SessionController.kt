@@ -42,6 +42,11 @@ class SessionController private constructor(private val context: Context) {
             if (started) return
             started = true
         }
+        // Cartridge loading was removed from the UI; drop any cartridge persisted
+        // by an older build so the ADAM always boots clean.
+        if (settings.config.cartPath != null) {
+            settings.config = settings.config.copy(cartPath = null)
+        }
         thread(name = "adam-bootstrap") { launch(settings.config) }
     }
 

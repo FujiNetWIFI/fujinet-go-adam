@@ -18,16 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
@@ -45,11 +40,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import online.fujinet.go.adam.MediaImport
 import online.fujinet.go.adam.R
 import online.fujinet.go.adam.SessionController
 import online.fujinet.go.adam.fujinet.FujiNetWebViewActivity
-import kotlin.concurrent.thread
 
 private enum class Overlay { NONE, KEYBOARD, CONTROLLER }
 
@@ -64,25 +57,6 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     var keyboardHaptics by remember { mutableStateOf(session.keyboardHapticsEnabled) }
     var joystickHaptics by remember { mutableStateOf(session.joystickHapticsEnabled) }
 
-    val importPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        val sd = session.sdPath
-        if (uri != null && sd != null) {
-            thread(name = "adam-import") { MediaImport.importToSd(context, uri, sd) }
-        }
-    }
-
-    val cartPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        if (uri != null) {
-            thread(name = "adam-cart") {
-                MediaImport.importCartridge(context, uri)?.let { session.loadCartridge(it) }
-            }
-        }
-    }
-
     if (showSettings) {
         SettingsDialog(
             config = session.config,
@@ -91,7 +65,6 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
             onApply = { session.applyConfig(it) },
             onKeyboardHapticsChange = { keyboardHaptics = it; session.keyboardHapticsEnabled = it },
             onJoystickHapticsChange = { joystickHaptics = it; session.joystickHapticsEnabled = it },
-            onEjectCartridge = { session.ejectCartridge(); showSettings = false },
             onResetColeco = { session.resetColeco(); showSettings = false },
             onDismiss = { showSettings = false },
         )
@@ -106,9 +79,6 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
             overlay = overlay,
             onToggleKeyboard = { overlay = if (overlay == Overlay.KEYBOARD) Overlay.NONE else Overlay.KEYBOARD },
             onToggleController = { overlay = if (overlay == Overlay.CONTROLLER) Overlay.NONE else Overlay.CONTROLLER },
-            onReset = { session.resetAdam() },
-            onImport = { importPicker.launch(arrayOf("*/*")) },
-            onCartridge = { cartPicker.launch(arrayOf("*/*")) },
             onSettings = { showSettings = true },
             onOpenFujiNet = {
                 context.startActivity(Intent(context, FujiNetWebViewActivity::class.java))
@@ -164,9 +134,6 @@ private fun FunctionBar(
     overlay: Overlay,
     onToggleKeyboard: () -> Unit,
     onToggleController: () -> Unit,
-    onReset: () -> Unit,
-    onImport: () -> Unit,
-    onCartridge: () -> Unit,
     onSettings: () -> Unit,
     onOpenFujiNet: () -> Unit,
     onShutdown: () -> Unit,
@@ -180,9 +147,6 @@ private fun FunctionBar(
     ) {
         BarButton(Icons.Filled.Keyboard, "Keyboard", Modifier.weight(1f), overlay == Overlay.KEYBOARD, onToggleKeyboard)
         BarButton(Icons.Filled.Gamepad, "Joystick", Modifier.weight(1f), overlay == Overlay.CONTROLLER, onToggleController)
-        BarButton(Icons.Filled.Upload, "Import media", Modifier.weight(1f), onClick = onImport)
-        BarButton(Icons.Filled.Memory, "Load cartridge", Modifier.weight(1f), onClick = onCartridge)
-        BarButton(Icons.Filled.RestartAlt, "Reset", Modifier.weight(1f), onClick = onReset)
         FujiNetBarButton(Modifier.weight(1f), onClick = onOpenFujiNet)
         BarButton(Icons.Filled.Settings, "Settings", Modifier.weight(1f), onClick = onSettings)
         BarButton(Icons.Filled.PowerSettingsNew, "Power off", Modifier.weight(1f), onClick = onShutdown)

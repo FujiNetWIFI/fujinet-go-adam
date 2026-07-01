@@ -44,7 +44,6 @@ fun SettingsDialog(
     onApply: (SessionConfig) -> Unit,
     onKeyboardHapticsChange: (Boolean) -> Unit,
     onJoystickHapticsChange: (Boolean) -> Unit,
-    onEjectCartridge: () -> Unit,
     onResetColeco: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -79,12 +78,6 @@ fun SettingsDialog(
                 ToggleRow("Keyboard haptics", keyboardHaptics, onKeyboardHapticsChange)
                 ToggleRow("Joystick haptics", joystickHaptics, onJoystickHapticsChange)
 
-                if (config.cartPath != null) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    TextButton(onClick = { onEjectCartridge(); onDismiss() }) {
-                        Text("Eject cartridge")
-                    }
-                }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 TextButton(onClick = { onResetColeco(); onDismiss() }) {
                     Text("ColecoVision reset")
