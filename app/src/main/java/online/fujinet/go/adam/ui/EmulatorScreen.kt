@@ -86,7 +86,15 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
             onShutdown = onShutdown,
         )
 
-        if (landscape && overlay == Overlay.CONTROLLER) {
+        if (landscape && overlay == Overlay.KEYBOARD) {
+            // Landscape: split the keyboard into two halves placed in the pillar-box
+            // margins beside the picture, so the display keeps full height.
+            LandscapeSplitKeyboard(
+                session = session,
+                hapticsEnabled = keyboardHaptics,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            )
+        } else if (landscape && overlay == Overlay.CONTROLLER) {
             // Flank the screen so it can render as large as possible: d-pad +
             // keypad on the left, fire buttons on the right. A phone's landscape
             // height is short, so the joystick + 4-row keypad column is compacted;

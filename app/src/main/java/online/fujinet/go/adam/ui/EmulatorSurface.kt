@@ -21,7 +21,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import online.fujinet.go.adam.SessionController
 
 // The ADAM/TMS9928 frame buffer rendered by adam_host.c (WIDTH x HEIGHT).
-private const val FRAME_RATIO = 256f / 212f
+// Internal so the landscape split keyboard can size its flanks to the pillar-box margins.
+internal const val FRAME_RATIO = 256f / 212f
 
 /**
  * Hosts the ADAM video output. The native layer renders ADAMEm's RGB565 frames

@@ -388,6 +388,8 @@ patch("components_pc/libssh/src/misc.c", [
 # it makes a native tombstone identify the failing task -- e.g. "adamnet_bus" (the
 # disk/block-read worker) -- instead of "adam-bootstrap", the misleading comm name
 # a detached thread otherwise inherits from whatever thread spawned it.
+# Optional (required=False): the PC FreeRTOS shim isn't shipped on every
+# fujinet-firmware revision/target, so skip the cosmetic naming patch when absent.
 patch("lib/compat/pc_rtos/pc_rtos.cpp", [
     (
         '#include <mutex>\n'
@@ -438,7 +440,7 @@ patch("lib/compat/pc_rtos/pc_rtos.cpp", [
         '    return pc_task_create(fn, name, arg, out_handle);\n'
         '}\n',
     ),
-])
+], required=False)
 
 # NOTE: The AdamNet BoIP response-deadline fix (don't drop block-device ACKs on
 # the 300us hardware window over BoIP, while keeping it for single-shot
