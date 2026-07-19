@@ -4,12 +4,10 @@
 
 #include "session_runtime.h"
 
-// ADAMEm PSG sample generator (AdamSDLSound_2.c). Fills `len` bytes of mono
-// signed-16 samples at 44100 Hz from the PSG state. soundData reads its state
-// from `userdata`, which must be the emulator's PSG state (file-static in
-// AdamSDLSound_2.c; exposed via adamsound_get_state()).
-extern "C" void soundData(void* userdata, unsigned char* stream, int len);
-extern "C" void* adamsound_get_state(void);
+// adamcore PSG sample generator. Fills `nsamples` mono signed-16 samples at
+// 44100 Hz, synthesized from the core's timestamped PSG register queue
+// (pull model: output follows the AudioTrack clock).
+extern "C" int adamhost_render_audio(int16_t* out, int nsamples);
 
 namespace {
 std::string JStr(JNIEnv* env, jstring s) {
@@ -94,7 +92,7 @@ Java_online_fujinet_go_adam_core_EmulatorNative_nativeRenderAudio(
     if (n <= 0) return 0;
     jshort* buf = env->GetShortArrayElements(out, nullptr);
     if (buf == nullptr) return 0;
-    soundData(adamsound_get_state(), reinterpret_cast<unsigned char*>(buf), static_cast<int>(n) * 2);
+    adamhost_render_audio(reinterpret_cast<int16_t*>(buf), static_cast<int>(n));
     env->ReleaseShortArrayElements(out, buf, 0);
     return n;
 }

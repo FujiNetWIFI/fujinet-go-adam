@@ -1,28 +1,21 @@
 # Licensing & Compliance
 
-FujiNet Go Adam is a **mixed-license** project. The shipped app is built from
-original glue code plus two third-party emulation/runtime components with
-different — and partly restrictive — license terms. Read this before
-distributing any build.
+FujiNet Go Adam is a **uniformly GPLv3** application: original glue code plus
+two GPLv3 emulation/runtime components. Earlier releases embedded the
+non-commercially-licensed ADAMEm emulator; that core has been replaced by
+**adamcore**, a clean-room GPLv3 implementation, which removes the
+non-commercial restriction from the combined work.
 
 ## Components and their licenses
 
-### ADAMEm (the emulator core) — NON-COMMERCIAL
-- Original ADAMEm © Marcel de Kogel (1996–1999).
-- SDL port and later additions © Geoff Oltmans (2006–present).
-- Source headers state: *"You are not allowed to distribute this software
-  commercially. Please notify me if you make any changes to this file."*
-
-This is **not** an OSI-approved open-source license and is **not** GPL-compatible.
-It permits non-commercial use and redistribution of (modified) sources with
-notification, but **prohibits commercial distribution**. Because ADAMEm code is
-linked into `libadamcore.so`, this restriction propagates to any combined
-binary: **do not sell or commercially distribute builds of this app.**
-
-Local modifications staged into the build (the AdamNet Bus-over-IP bridge in
-`AdamNet.c`, and the `adam_host.c` Android driver that replaces `AdamemSDL.c`)
-are changes to ADAMEm and should be shared back with the upstream authors per
-the "notify me if you make changes" request.
+### adamcore (the emulator core) — GPLv3
+- Copyright © 2026 Thomas Cherryhomes; GNU GPL v3 or later.
+- A from-scratch, clean-room ADAM/ColecoVision core written without reference
+  to any existing emulator's source (the AdamEm/AdamEmSDL source was never
+  consulted). The adamcore repository's `PROVENANCE.md` records the clean-room
+  statement and the complete list of hardware documentation used.
+- Staged into the build by `tools/adamcore/build-adamcore-core.sh` and
+  compiled into `libadamcore.so` together with the app's native glue.
 
 ### FujiNet firmware / fujinet-pc (ADAM target) — GPLv3
 - `libfujinet.so` is built from the FujiNet firmware (`fujinet-pc-adam`,
@@ -41,23 +34,21 @@ the "notify me if you make changes" request.
 - **cJSON** — MIT.
 
 ### ADAM system ROMs (`EOS.rom`, `OS7.rom`, `WP.rom`)
-These are Coleco copyrighted firmware images bundled as runtime assets from the
-ADAMEm checkout. They are **not** freely licensed. There is no open-source ADAM
-OS replacement equivalent to the Altirra ROMs that FujiNet Go 800 uses for
-Atari. Bundling/redistributing them may infringe Coleco's copyright; for public
-distribution they should likely be removed and supplied by the end user.
+These are Coleco firmware images bundled as runtime assets from
+`tools/adamcore/roms/`. They are **not** GPL-licensed and are not part of the
+GPL'd program: they are data the emulator loads at runtime. Distribution
+rights for these images are handled separately by the publisher.
 
 ## Net effect
 
-A combined, distributed binary is simultaneously bound by:
-- ADAMEm's **non-commercial** restriction (no commercial distribution), and
-- FujiNet's **GPLv3** copyleft obligations (offer corresponding source), and
-- the ADAM ROM copyright question above.
+A combined, distributed binary is bound by the **GPLv3** (offer corresponding
+source for the app, adamcore, and the FujiNet runtime) plus the LGPL/MIT/
+Apache terms of the bundled libraries. There is no longer any non-commercial
+restriction: commercial distribution (including app-store publication) is
+permitted under the GPLv3's terms.
 
-The original FujiNet Go Adam glue code (build scripts, `adam_host.c`,
+The FujiNet Go Adam glue code (build scripts, `adam_host.c`,
 `session_runtime.cpp`, `adam_core.cpp`, the Kotlin app) is offered under the
-terms in [LICENSE](./LICENSE), **except** where a stricter component license
-(ADAMEm) governs the combined work. When the licenses conflict, the most
-restrictive applicable terms win.
+terms in [LICENSE](./LICENSE) (GPLv3).
 
 See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for attribution details.

@@ -26,7 +26,7 @@ fun readFujiNetRuntimeVersion(): String {
 val fujiNetRuntimeVersion = readFujiNetRuntimeVersion()
 
 fun readAdamemVersion(): String {
-    val sourceScript = rootProject.file("tools/adamem/build-adamem-core.sh")
+    val sourceScript = rootProject.file("tools/adamcore/build-adamcore-core.sh")
     if (!sourceScript.isFile) {
         return "Unknown"
     }
@@ -52,11 +52,13 @@ val adamemVersion = readAdamemVersion()
 
 val prepareAdamemCore by tasks.registering(Exec::class) {
     group = "build setup"
-    description = "Stages the ADAMEm emulator core source tree from the local checkout."
+    description = "Stages the adamcore emulator sources and ADAM system ROMs."
     workingDir = rootProject.projectDir
-    commandLine("bash", rootProject.file("tools/adamem/build-adamem-core.sh").absolutePath)
-    inputs.file(rootProject.file("tools/adamem/build-adamem-core.sh"))
-    outputs.dir(project.file("src/main/cpp-generated/adamem"))
+    commandLine("bash", rootProject.file("tools/adamcore/build-adamcore-core.sh").absolutePath)
+    inputs.file(rootProject.file("tools/adamcore/build-adamcore-core.sh"))
+    inputs.dir(rootProject.file("tools/adamcore/roms"))
+    outputs.dir(project.file("src/main/cpp-generated/adamcore"))
+    outputs.dir(project.file("src/main/assets-generated/adamem"))
 }
 
 // Optional dev override: -PadamAbi=arm64-v8a builds a single ABI for fast

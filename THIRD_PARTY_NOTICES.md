@@ -3,12 +3,13 @@
 FujiNet Go Adam incorporates the following third-party software. See
 [COMPLIANCE.md](./COMPLIANCE.md) for how these licenses interact.
 
-## ADAMEm — Coleco ADAM emulator
-- Copyright © Marcel de Kogel, 1996–1999.
-- SDL port and additions copyright © Geoff Oltmans, 2006–present.
-- License: non-commercial ("You are not allowed to distribute this software
-  commercially. Please notify me if you make any changes.").
-- Used as the emulator core (`libadamcore.so`).
+## adamcore — clean-room Coleco ADAM / ColecoVision emulator
+- Copyright © 2026 Thomas Cherryhomes.
+- License: GNU GPL v3 (or later).
+- A from-scratch, clean-room implementation written without reference to any
+  existing emulator's source code (see the adamcore repository's
+  PROVENANCE.md).
+- Used as the emulator core inside `libadamcore.so`.
 
 ## FujiNet firmware (fujinet-pc, ADAM target)
 - Copyright © The FujiNet project / contributors.

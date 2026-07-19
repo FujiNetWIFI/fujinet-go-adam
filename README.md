@@ -33,7 +33,7 @@ is just there.
 The native components are built from local checkouts (not pinned GitHub
 tarballs), so unpushed changes are used as-is:
 
-- ADAMEm: `~/Workspace/adamem_sdl` (branch `fujinet-adamnet-bridge`)
+- adamcore: `~/Workspace/adamcore` (clean-room GPLv3 core; override with `ADAMCORE_SRC=`)
 - FujiNet: `~/Workspace/fujinet-pc-adam` (branch `adam-pc-bus-over-ip`)
 
 Override with `ADAMEM_SRC=` / `FUJINET_SRC=` when running the build scripts.

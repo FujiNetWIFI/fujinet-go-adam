@@ -14,10 +14,10 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// --- ADAMEm core (C) -------------------------------------------------------
+// --- adamcore host layer (C) -----------------------------------------------
 extern "C" {
-int  adamem_main(int argc, char* argv[]);
-extern int Z80_Running;  // defined in Z80.c; set 0 to terminate the emulation loop
+int  adamhost_main(int argc, char* argv[]);
+void adamhost_request_stop(void);
 void adamhost_set_frame_sink(void (*sink)(const uint16_t*, int, int, void*), void* ud);
 void adamhost_inject_key(int adam_char);
 void adamhost_set_joystick(int port, int adamnet_state);
@@ -65,7 +65,7 @@ void SessionRuntime::StartSession(const std::string& runtime_root,
 
     // argv[0] + the ADAMEm command line built by the Kotlin layer.
     arg_storage_.clear();
-    arg_storage_.push_back("adamem");
+    arg_storage_.push_back("adamcore");
     for (const std::string& a : adam_args) arg_storage_.push_back(a);
     argv_.clear();
     argv_.reserve(arg_storage_.size());
@@ -82,7 +82,6 @@ void SessionRuntime::StartSession(const std::string& runtime_root,
         // Continue anyway: ADAMEm still boots, just without the FujiNet drive.
     }
 
-    Z80_Running = 1;
     running_.store(true);
     render_running_.store(true);
     render_thread_ = std::thread(&SessionRuntime::RenderThreadMain, this);
@@ -103,9 +102,9 @@ void SessionRuntime::EmulatorThreadMain() {
     // (driven by the per-frame VDP interrupt) sound uneven. Still below the
     // audio feeder (URGENT_AUDIO = -19), which must never underrun.
     setpriority(PRIO_PROCESS, 0, -8);
-    LOGI("Emulator thread: entering adamem_main with %zu args", argv_.size());
-    int rc = adamem_main(static_cast<int>(argv_.size()), argv_.data());
-    LOGI("Emulator thread: adamem_main returned %d", rc);
+    LOGI("Emulator thread: entering adamhost_main with %zu args", argv_.size());
+    int rc = adamhost_main(static_cast<int>(argv_.size()), argv_.data());
+    LOGI("Emulator thread: adamhost_main returned %d", rc);
     running_.store(false);
 }
 
@@ -115,7 +114,7 @@ void SessionRuntime::StopSession() {
         return;
     }
 
-    Z80_Running = 0;  // break the core's execution loop
+    adamhost_request_stop();  // break the host emulation loop
     if (emulator_thread_.joinable()) {
         emulator_thread_.join();
     }

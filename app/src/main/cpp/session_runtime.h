@@ -11,7 +11,7 @@
 #include <vector>
 
 // Orchestrates one ADAM session: the ADAMEm core (run on a worker thread via
-// adamem_main) plus the in-process FujiNet runtime, joined over AdamNet
+// adamhost_main) plus the in-process FujiNet runtime, joined over AdamNet
 // "Bus over IP" on loopback TCP 65216 (ADAMEm listens, FujiNet connects in).
 class SessionRuntime {
 public:
@@ -77,7 +77,7 @@ private:
     std::thread emulator_thread_;
     std::atomic<bool> running_{false};
 
-    // Synthesized argv for adamem_main; strings must outlive the emulator (the
+    // Synthesized argv for adamhost_main; strings must outlive the emulator (the
     // core stores argv[] pointers as its ROM/option paths).
     std::vector<std::string> arg_storage_;
     std::vector<char*> argv_;
