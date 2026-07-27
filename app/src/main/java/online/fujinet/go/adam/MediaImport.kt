@@ -32,7 +32,7 @@ object MediaImport {
 
     /**
      * Copies a ColecoVision/ADAM cartridge image into app-private storage and
-     * returns its absolute path (carts are loaded by ADAMEm itself, not FujiNet).
+     * returns its absolute path (carts are loaded by adamcore itself, not FujiNet).
      */
     fun importCartridge(context: Context, uri: Uri): String? {
         return try {

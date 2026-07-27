@@ -9,6 +9,7 @@ FujiNet Go Adam incorporates the following third-party software. See
 - A from-scratch, clean-room implementation written without reference to any
   existing emulator's source code (see the adamcore repository's
   PROVENANCE.md).
+- Source: https://github.com/tschak909/adamcore
 - Used as the emulator core inside `libadamcore.so`.
 
 ## FujiNet firmware (fujinet-pc, ADAM target)
@@ -43,6 +44,7 @@ FujiNet Go Adam incorporates the following third-party software. See
 - License: MIT.
 
 ## Coleco ADAM system ROMs
-- `EOS.rom`, `OS7.rom`, `WP.rom` are Coleco copyrighted firmware. They are
-  bundled from the ADAMEm checkout for emulation and are not freely licensed.
-  See the ROM note in [COMPLIANCE.md](./COMPLIANCE.md).
+- `EOS.rom`, `OS7.rom`, `WP.rom` are the original Coleco firmware images, now
+  in the public domain. They are bundled from `tools/adamcore/roms/` for
+  emulation and carry no license of their own. See the ROM note in
+  [COMPLIANCE.md](./COMPLIANCE.md).

@@ -2,7 +2,7 @@ package online.fujinet.go.adam
 
 import android.content.Context
 
-/** Machine/display/controller options that map onto ADAMEm command-line args. */
+/** Machine/display/controller options that map onto adamcore command-line args. */
 data class SessionConfig(
     val palette: String = PALETTE_NAMES[0],
     val expansion: String = EXPANSION_NAMES[0],
@@ -12,7 +12,7 @@ data class SessionConfig(
     val cartPath: String? = null,
 )
 
-/** Names for ADAMEm's four built-in palettes (index = -palette value). */
+/** Names for adamcore's four built-in palettes (index = -palette value). */
 val PALETTE_NAMES = listOf("Default (TMS9928)", "Palette 2", "Palette 3", "Palette 4")
 
 /** Expansion module modes (index = -expansion value). */

@@ -25,7 +25,7 @@ import online.fujinet.go.adam.SessionController
 internal const val FRAME_RATIO = 256f / 212f
 
 /**
- * Hosts the ADAM video output. The native layer renders ADAMEm's RGB565 frames
+ * Hosts the ADAM video output. The native layer renders adamcore's RGB565 frames
  * directly into a [Surface] (see session_runtime.cpp::OnFrame); the surface is
  * obtained from a [TextureView]'s [SurfaceTexture].
  *

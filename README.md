@@ -3,16 +3,16 @@
 Android Coleco ADAM emulation with integrated FujiNet, in the spirit of
 [FujiNet Go 800](https://github.com/mozzwald/fujinet-go-800) (Atari 8-bit).
 
-This repository fuses two desktop programs into one cohesive mobile app:
+This repository fuses two codebases into one cohesive mobile app:
 
-- **ADAMEm** — Marcel de Kogel's Coleco ADAM emulator (Geoff Oltmans' SDL port),
-  compiled headless into a native library and driven frame-by-frame into an
-  Android `Surface`.
+- **[adamcore](https://github.com/tschak909/adamcore)** — a clean-room GPLv3
+  Coleco ADAM / ColecoVision emulator core (C99, no SDL), compiled into the
+  app's native library and driven frame-by-frame into an Android `Surface`.
 - **fujinet-pc (ADAM target)** — the FujiNet firmware/PC port built as
   `libfujinet.so` and run in-process as a background runtime.
 
 The two halves talk over **AdamNet "Bus over IP" (BoIP) on loopback TCP 65216**:
-ADAMEm acts as the AdamNet master and listens; the FujiNet runtime connects in
+adamcore acts as the AdamNet master and listens; the FujiNet runtime connects in
 as the BoIP client (`NetAdamNet`). This is the ADAM analogue of FujiNet Go 800's
 NetSIO link. To the user it is transparent — boot the ADAM and the FujiNet drive
 is just there.
@@ -21,9 +21,9 @@ is just there.
 
 | Concern | Component |
 |---|---|
-| Emulator core | ADAMEm (C), run on a worker thread via `adamem_main()` |
+| Emulator core | adamcore (C99), run on a worker thread via `adamhost_main()` |
 | App native lib | `libadamcore.so` (core + Android host + session + JNI) |
-| Android host | `app/src/main/cpp/adam_host.c` (replaces ADAMEm's SDL driver) |
+| Android host | `app/src/main/cpp/adam_host.c` (vsync-paced frame loop, input, audio) |
 | FujiNet runtime | `libfujinet.so` (fujinet-pc ADAM target), dlopen'd in-process |
 | Transport | AdamNet BoIP, TCP 65216 (emulator listens, FujiNet connects) |
 | UI | Android Surface host (Compose UI: in progress) |
@@ -33,10 +33,13 @@ is just there.
 The native components are built from local checkouts (not pinned GitHub
 tarballs), so unpushed changes are used as-is:
 
-- adamcore: `~/Workspace/adamcore` (clean-room GPLv3 core; override with `ADAMCORE_SRC=`)
+- adamcore: `~/Workspace/adamcore` (clean-room GPLv3 core, upstream
+  [tschak909/adamcore](https://github.com/tschak909/adamcore)). The staging
+  script records the expected revision in `SOURCE_COMMIT` and warns — but does
+  not fail — when the checkout sits elsewhere.
 - FujiNet: `~/Workspace/fujinet-pc-adam` (branch `adam-pc-bus-over-ip`)
 
-Override with `ADAMEM_SRC=` / `FUJINET_SRC=` when running the build scripts.
+Override with `ADAMCORE_SRC=` / `FUJINET_SRC=` when running the build scripts.
 
 ## Build requirements
 
@@ -65,21 +68,22 @@ The application id / package is `online.fujinet.go.adam`.
 
 The Gradle build invokes the staging/cross-compile scripts:
 
-- `bash tools/adamem/build-adamem-core.sh` — stages the ADAMEm core sources +
+- `bash tools/adamcore/build-adamcore-core.sh` — stages the adamcore sources +
   ROMs into the generated trees.
 - `bash tools/fujinet/build-fujinet.sh --all-abis` — builds `libfujinet.so` and
   the runtime assets (forced to `[BOIP] enabled=1 host=127.0.0.1 port=65216`).
 
 ## Generated (uncommitted) directories
 
-- `app/src/main/cpp-generated/` — staged ADAMEm sources
+- `app/src/main/cpp-generated/` — staged adamcore sources
 - `app/src/main/assets-generated/` — FujiNet runtime + ADAM ROM assets
 - `app/src/main/jniLibs-generated/` — `libfujinet.so` per ABI
-- `tools/adamem/work/`, `tools/fujinet/work/`
+- `tools/fujinet/work/`
 
 ## Licensing
 
 This is a mixed-license project — see [COMPLIANCE.md](./COMPLIANCE.md) and
-[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Note in particular that
-**ADAMEm is distributed under a non-commercial license**, which constrains
-distribution of any combined binary.
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). The app, adamcore and the
+FujiNet runtime are all GPLv3; the bundled ADAM system ROMs (EOS/OS7/
+SmartWriter) are public domain, and the FujiNet runtime pulls in LGPL/MIT/
+Apache libraries.

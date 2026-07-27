@@ -10,14 +10,14 @@
 #include <thread>
 #include <vector>
 
-// Orchestrates one ADAM session: the ADAMEm core (run on a worker thread via
+// Orchestrates one ADAM session: the adamcore core (run on a worker thread via
 // adamhost_main) plus the in-process FujiNet runtime, joined over AdamNet
-// "Bus over IP" on loopback TCP 65216 (ADAMEm listens, FujiNet connects in).
+// "Bus over IP" on loopback TCP 65216 (adamcore listens, FujiNet connects in).
 class SessionRuntime {
 public:
     static SessionRuntime& Get();
 
-    // Paths: the FujiNet runtime root/config/SD/data. adam_args is the ADAMEm
+    // Paths: the FujiNet runtime root/config/SD/data. adam_args is the emulator
     // command line (without argv[0]) built by the Kotlin layer: machine, ROM
     // paths, -fujinet, -palette, optional -cart, etc.
     void StartSession(const std::string& runtime_root,

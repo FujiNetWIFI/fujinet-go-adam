@@ -3,14 +3,16 @@
 # build. adamcore is the clean-room GPLv3 ADAM/ColecoVision core that
 # replaced the non-commercial ADAMEm; see COMPLIANCE.md.
 #
-# Sources come from a git checkout of the adamcore repository, pinned by
-# SOURCE_COMMIT (override the location with ADAMCORE_SRC=/path). Staged
-# trees are git-ignored; ROMs are committed under tools/adamcore/roms and
-# staged into the APK assets from there.
+# Sources come from a git checkout of the adamcore repository
+# (https://github.com/tschak909/adamcore), pinned by SOURCE_COMMIT
+# (override the location with ADAMCORE_SRC=/path). Staged trees are
+# git-ignored; ROMs are committed under tools/adamcore/roms and staged
+# into the APK assets from there.
 set -euo pipefail
 
+SOURCE_URL="https://github.com/tschak909/adamcore"
 SOURCE_BRANCH="main"
-SOURCE_COMMIT="HEAD"
+SOURCE_COMMIT="d37f05596931859d41d4e4d267531509a3d7f2f3"
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SRC="${ADAMCORE_SRC:-$HOME/Workspace/adamcore}"
@@ -19,7 +21,8 @@ ASSETS="$ROOT/app/src/main/assets-generated/adamem"
 ROMS="$ROOT/tools/adamcore/roms"
 
 if [ ! -f "$SRC/src/machine.c" ]; then
-    echo "error: adamcore sources not found at $SRC (set ADAMCORE_SRC=)" >&2
+    echo "error: adamcore sources not found at $SRC (set ADAMCORE_SRC=, or" \
+         "clone $SOURCE_URL)" >&2
     exit 1
 fi
 

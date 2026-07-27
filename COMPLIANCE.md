@@ -34,18 +34,20 @@ non-commercial restriction from the combined work.
 - **cJSON** — MIT.
 
 ### ADAM system ROMs (`EOS.rom`, `OS7.rom`, `WP.rom`)
-These are Coleco firmware images bundled as runtime assets from
-`tools/adamcore/roms/`. They are **not** GPL-licensed and are not part of the
-GPL'd program: they are data the emulator loads at runtime. Distribution
-rights for these images are handled separately by the publisher.
+These are the original Coleco firmware images, bundled as runtime assets from
+`tools/adamcore/roms/`. They are **in the public domain** and so are freely
+redistributable with the app. They are still not part of the GPL'd program
+itself — they are data the emulator loads at runtime, carrying no license of
+their own.
 
 ## Net effect
 
 A combined, distributed binary is bound by the **GPLv3** (offer corresponding
 source for the app, adamcore, and the FujiNet runtime) plus the LGPL/MIT/
 Apache terms of the bundled libraries. There is no longer any non-commercial
-restriction: commercial distribution (including app-store publication) is
-permitted under the GPLv3's terms.
+restriction, and the bundled ROMs are public domain, so commercial
+distribution (including app-store publication) is permitted under the GPLv3's
+terms.
 
 The FujiNet Go Adam glue code (build scripts, `adam_host.c`,
 `session_runtime.cpp`, `adam_core.cpp`, the Kotlin app) is offered under the

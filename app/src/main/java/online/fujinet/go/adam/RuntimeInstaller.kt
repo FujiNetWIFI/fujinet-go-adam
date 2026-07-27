@@ -9,7 +9,7 @@ import java.io.File
  * a writable runtime directory the native layer can chdir into and mutate.
  *
  * Assets are produced by tools/fujinet/build-fujinet.sh and
- * tools/adamem/build-adamem-core.sh:
+ * tools/adamcore/build-adamcore-core.sh:
  *   assets/fujinet/{fnconfig.ini, data/, SD/}
  *   assets/adamem/roms/{EOS.rom, OS7.rom, WP.rom}
  */

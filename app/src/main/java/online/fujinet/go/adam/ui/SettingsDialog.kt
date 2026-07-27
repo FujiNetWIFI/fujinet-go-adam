@@ -34,7 +34,7 @@ import online.fujinet.go.adam.YES_NO
 
 /**
  * Machine/display/controller settings. Clicking Apply restarts the session so
- * the new ADAMEm command line takes effect.
+ * the new adamcore command line takes effect.
  */
 @Composable
 fun SettingsDialog(

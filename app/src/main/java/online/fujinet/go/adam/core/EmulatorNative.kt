@@ -3,7 +3,7 @@ package online.fujinet.go.adam.core
 import android.view.Surface
 
 /**
- * JNI bridge to libadamcore.so (the ADAMEm core + Android host + the in-process
+ * JNI bridge to libadamcore.so (the adamcore core + Android host + the in-process
  * FujiNet runtime). The native side runs the emulator on its own thread and the
  * FujiNet runtime in-process; the two meet over AdamNet "Bus over IP" on
  * loopback TCP 65216.
@@ -11,7 +11,7 @@ import android.view.Surface
 object EmulatorNative {
     init {
         // libfujinet.so is dlopen'd by the native layer on demand; we only need
-        // to load our own core, which links the JNI + host + ADAMEm core.
+        // to load our own core, which links the JNI + host + adamcore core.
         System.loadLibrary("adamcore")
     }
 

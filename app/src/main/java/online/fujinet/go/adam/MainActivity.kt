@@ -20,7 +20,7 @@ import online.fujinet.go.adam.ui.theme.FujiNetGoAdamTheme
 
 /**
  * FujiNet Go Adam main screen: the ADAM display plus on-screen controller and
- * keyboard. The native layer (ADAMEm + in-process FujiNet over AdamNet BoIP) is
+ * keyboard. The native layer (adamcore + in-process FujiNet over AdamNet BoIP) is
  * owned by [EmulatorSessionService] (a foreground service) so it keeps running
  * across activity changes (e.g. the FujiNet web admin) and while backgrounded.
  * The session itself is a process singleton; the Shutdown button stops both.

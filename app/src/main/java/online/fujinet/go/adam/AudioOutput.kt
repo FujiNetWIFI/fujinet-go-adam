@@ -9,9 +9,10 @@ import online.fujinet.go.adam.core.EmulatorNative
 import kotlin.concurrent.thread
 
 /**
- * Streams ADAMEm's PSG output to an AudioTrack. A feeder thread repeatedly asks
- * the native layer (which invokes ADAMEm's `soundData` generator) for the next
- * block of mono 44100 Hz signed-16 samples and writes them out.
+ * Streams the emulated SN76489 output to an AudioTrack. A feeder thread
+ * repeatedly asks the native layer (which calls adamcore's
+ * `adamcore_render_audio`) for the next block of mono 44100 Hz signed-16
+ * samples and writes them out.
  */
 class AudioOutput {
     private companion object {

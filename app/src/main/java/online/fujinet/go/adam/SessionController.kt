@@ -10,7 +10,7 @@ import kotlin.concurrent.thread
 
 /**
  * Owns the lifetime of one ADAM session: stages runtime assets, builds the
- * ADAMEm command line from a [SessionConfig], starts the native emulator + the
+ * adamcore command line from a [SessionConfig], starts the native emulator + the
  * in-process FujiNet runtime (joined over AdamNet BoIP on TCP 65216), and
  * forwards input. Supports restarting to apply settings or load a cartridge.
  */

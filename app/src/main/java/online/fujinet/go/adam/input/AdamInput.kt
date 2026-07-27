@@ -5,8 +5,10 @@ package online.fujinet.go.adam.input
  * native `adamhost_set_joystick(port, rawState)` stays a thin setter.
  *
  * The ColecoVision controller is read as a 16-bit value, active-low, idle =
- * 0x7F7F. Direction and fire bits live as documented in ADAMEm's AdamemSDL.c;
- * the low nibble carries the keypad value (0x0F = no key).
+ * 0x7F7F: the high byte is the joystick strobe (directions in bits 0-3, left
+ * fire in bit 6) and the low byte the keypad strobe (right fire in bit 6, key
+ * index in the low nibble, 0x0F = no key). adamcore's `controller_read` in
+ * machine.c decodes exactly these bits.
  */
 object AdamController {
     const val IDLE = 0x7F7F
@@ -50,8 +52,8 @@ object AdamController {
 
 /**
  * ADAM keyboard byte codes. Printable keys are ASCII; the ADAM special keys use
- * the EOS codes (0x80-0xAF) the keyboard hardware produces. Values match
- * ADAMEm's keyboard translation tables.
+ * the EOS codes (0x80-0xAF) the keyboard hardware produces, which adamcore's
+ * AdamNet keyboard device passes through to the guest unchanged.
  */
 object AdamKeys {
     const val RETURN = 0x0D

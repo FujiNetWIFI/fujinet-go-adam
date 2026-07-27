@@ -9,7 +9,9 @@ if(NOT EXISTS "${ADAMCORE_GENERATED_DIR}/src/machine.c")
 endif()
 
 # adamcore emulator library sources staged from the adamcore repository
-# (clean-room GPLv3 core; see COMPLIANCE.md).
+# (clean-room GPLv3 core; see COMPLIANCE.md). Mirrors the source list in
+# adamcore's own CMakeLists; src/net_win32.c is the Windows counterpart of
+# net_posix.c and is never built here.
 set(ADAMCORE_SOURCES
         src/z80.c
         src/tms9928a.c
@@ -20,6 +22,7 @@ set(ADAMCORE_SOURCES
         src/boip.c
         src/net_posix.c
         src/palette.c
+        src/debug.c
 )
 list(TRANSFORM ADAMCORE_SOURCES PREPEND "${ADAMCORE_GENERATED_DIR}/")
 

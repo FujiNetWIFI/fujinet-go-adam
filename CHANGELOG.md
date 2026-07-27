@@ -44,6 +44,6 @@ runs on the emulated ADAM, served by the in-process FujiNet over AdamNet BoIP.
   upstream into `fujinet-pc-adam`.
 
 ### Known gaps
-- ADAM system ROMs are bundled (Coleco copyright — see COMPLIANCE.md).
+- ADAM system ROMs are bundled (public domain — see COMPLIANCE.md).
 - Spinner/second-controller, SmartKeys, and an about/diagnostics screen are not
   yet wired.

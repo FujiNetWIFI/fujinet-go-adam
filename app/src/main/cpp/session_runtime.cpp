@@ -63,7 +63,7 @@ void SessionRuntime::StartSession(const std::string& runtime_root,
     sd_path_ = sd_path;
     data_path_ = data_path;
 
-    // argv[0] + the ADAMEm command line built by the Kotlin layer.
+    // argv[0] + the adamcore command line built by the Kotlin layer.
     arg_storage_.clear();
     arg_storage_.push_back("adamcore");
     for (const std::string& a : adam_args) arg_storage_.push_back(a);
@@ -79,7 +79,7 @@ void SessionRuntime::StartSession(const std::string& runtime_root,
                                      sd_path_.c_str(), data_path_.c_str(), kBoIpPort)) {
         const char* err = FujiNetAndroid_LastErrorMessage();
         LOGE("FujiNet runtime failed to start: %s", err ? err : "(unknown)");
-        // Continue anyway: ADAMEm still boots, just without the FujiNet drive.
+        // Continue anyway: adamcore still boots, just without the FujiNet drive.
     }
 
     running_.store(true);

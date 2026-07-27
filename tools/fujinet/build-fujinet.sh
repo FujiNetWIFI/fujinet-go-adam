@@ -7,7 +7,7 @@
 #   * Source is the user's LOCAL fujinet-pc-adam checkout (not a pinned GitHub
 #     tarball), staged into work/fujinet-firmware so the checkout is untouched.
 #   * The PC build targets ADAM (build.sh -cp ADAM), whose AdamNet "Bus over IP"
-#     transport (NetAdamNet) connects out to ADAMEm on TCP 65216.
+#     transport (NetAdamNet) connects out to adamcore on TCP 65216.
 #   * fnconfig.ini is forced to [BOIP] enabled=1 host=127.0.0.1 port=65216 so the
 #     in-process runtime connects to the in-process emulator on loopback.
 #
@@ -539,7 +539,7 @@ build_mbedtls() {
 }
 
 force_boip_config() {
-    # Ensure the runtime connects to ADAMEm's in-process AdamNet listener.
+    # Ensure the runtime connects to adamcore's in-process AdamNet listener.
     python3 - "${GENERATED_ASSET_ROOT}/fnconfig.ini" <<'PY'
 from pathlib import Path
 import sys, re
