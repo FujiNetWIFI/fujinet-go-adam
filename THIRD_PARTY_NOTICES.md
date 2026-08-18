@@ -44,7 +44,7 @@ FujiNet Go Adam incorporates the following third-party software. See
 - License: MIT.
 
 ## Coleco ADAM system ROMs
-- `EOS.rom`, `OS7.rom`, `WP.rom` are the original Coleco firmware images, now
-  in the public domain. They are bundled from `tools/adamcore/roms/` for
-  emulation and carry no license of their own. See the ROM note in
+- `EOS.rom`, `OS7.rom`, `WP.rom` are the original Coleco firmware images and
+  are copyrighted. **Not bundled in release builds** — imported by the end
+  user from their own dumps at the first-run ROM gate. See the ROM policy in
   [COMPLIANCE.md](./COMPLIANCE.md).

@@ -50,15 +50,49 @@ fun readAdamemVersion(): String {
 
 val adamemVersion = readAdamemVersion()
 
+// Dev-only flag: -PadamRoms=true stages the Coleco system ROMs (OS7/EOS/WP)
+// from the local ADAM_ROMS_SRC directory into assets so a local debug build
+// boots without an import step. NEVER set for a release build -- see
+// COMPLIANCE.md and the release-build guard below, which throws rather than
+// silently shipping ROMs.
+val adamRoms: Boolean = (project.findProperty("adamRoms") as String?)?.toBoolean() ?: false
+
 val prepareAdamemCore by tasks.registering(Exec::class) {
     group = "build setup"
-    description = "Stages the adamcore emulator sources and ADAM system ROMs."
+    description = "Stages the adamcore emulator sources (and, for dev builds, the ADAM system ROMs)."
     workingDir = rootProject.projectDir
-    commandLine("bash", rootProject.file("tools/adamcore/build-adamcore-core.sh").absolutePath)
+    commandLine(
+        listOf("bash", rootProject.file("tools/adamcore/build-adamcore-core.sh").absolutePath) +
+            (if (adamRoms) listOf("--with-roms") else emptyList())
+    )
     inputs.file(rootProject.file("tools/adamcore/build-adamcore-core.sh"))
-    inputs.dir(rootProject.file("tools/adamcore/roms"))
+    inputs.property("adamRoms", adamRoms)
     outputs.dir(project.file("src/main/cpp-generated/adamcore"))
     outputs.dir(project.file("src/main/assets-generated/adamem"))
+}
+
+// Audits the merged assets + native libs for embedded ROM signatures before a
+// release build can be packaged -- makes the "release builds ship no Coleco
+// ROMs" claim in COMPLIANCE.md mechanical rather than aspirational.
+val verifyNoEmbeddedRoms by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Fails if OS7/EOS/WP ROM bytes are present in the merged release assets or libs."
+    workingDir = rootProject.projectDir
+    commandLine(
+        "python3", rootProject.file("tools/adamcore/verify-no-roms.py").absolutePath,
+        "--require",
+        project.file("build/intermediates/assets/release").absolutePath,
+        project.file("build/intermediates/merged_native_libs/release").absolutePath
+    )
+    // The scan targets are merge outputs -- without this ordering the check
+    // can run against directories that don't exist yet and prove nothing.
+    mustRunAfter(
+        tasks.matching { it.name.startsWith("merge") && it.name.contains("Release") }
+    )
+}
+
+tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }.configureEach {
+    dependsOn(verifyNoEmbeddedRoms)
 }
 
 // Optional dev override: -PadamAbi=arm64-v8a builds a single ABI for fast
@@ -125,8 +159,8 @@ android {
         applicationId = "online.fujinet.go.adam"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "0.14.0"
+        versionCode = 12
+        versionName = "1.0.0"
         buildConfigField("String", "ADAMEM_VERSION", "\"${adamemVersion}\"")
         buildConfigField("String", "FUJINET_RUNTIME_VERSION", "\"${fujiNetRuntimeVersion}\"")
 
@@ -155,10 +189,33 @@ android {
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
+            ndk { debugSymbolLevel = "FULL" }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    if (adamRoms) {
+        // -PadamRoms is a dev-only convenience for local debug builds. A
+        // release build carrying it would ship Coleco-copyrighted system
+        // ROMs -- refuse outright instead of relying on
+        // verifyNoEmbeddedRoms to catch it after the fact. Checked against
+        // the task graph (not at buildTypes{} configuration time) so this
+        // doesn't also trip on unrelated debug-only invocations such as
+        // `assembleDebug`, since Gradle configures every build type's DSL
+        // block regardless of which task is actually requested.
+        gradle.taskGraph.whenReady {
+            val releaseTaskRequested = allTasks.any { task ->
+                task.path.contains(":app:") && task.name.contains("Release")
+            }
+            if (releaseTaskRequested) {
+                throw GradleException(
+                    "-PadamRoms=true is a dev-only flag; refusing a release build with it set. " +
+                        "See COMPLIANCE.md."
+                )
+            }
         }
     }
     compileOptions {

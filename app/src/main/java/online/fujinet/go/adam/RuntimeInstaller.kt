@@ -32,8 +32,27 @@ class RuntimeInstaller(private val context: Context) {
         if (force || !File(root, "fnconfig.ini").exists()) {
             copyAssetDir("fujinet", root)
         }
-        if (force || !File(romDir, "EOS.rom").exists()) {
-            copyAssetDir("adamem/roms", romDir)
+        // System ROMs: release builds ship no adamem/roms assets (users
+        // import their own -- see settings/RomStore.kt); dev -PadamRoms
+        // builds do. Stage per-file fill-missing so a user import is never
+        // clobbered, and never throw when the asset dir is absent (the old
+        // whole-dir copy crashed launch() on a ROM-free build).
+        romDir.mkdirs()
+        val romAssets = try {
+            context.assets.list("adamem/roms") ?: emptyArray()
+        } catch (_: Exception) {
+            emptyArray()
+        }
+        for (name in romAssets) {
+            val dest = File(romDir, name)
+            if (dest.exists()) continue
+            try {
+                context.assets.open("adamem/roms/$name").use { input ->
+                    dest.outputStream().use { output -> input.copyTo(output) }
+                }
+            } catch (_: Exception) {
+                // Unreadable entry -- leave it missing rather than crash.
+            }
         }
 
         return Paths(

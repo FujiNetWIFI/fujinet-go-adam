@@ -84,6 +84,8 @@ The Gradle build invokes the staging/cross-compile scripts:
 
 This is a mixed-license project — see [COMPLIANCE.md](./COMPLIANCE.md) and
 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). The app, adamcore and the
-FujiNet runtime are all GPLv3; the bundled ADAM system ROMs (EOS/OS7/
-SmartWriter) are public domain, and the FujiNet runtime pulls in LGPL/MIT/
-Apache libraries.
+FujiNet runtime are all GPLv3. The Coleco system ROMs (EOS/OS7/SmartWriter)
+are **copyrighted and are not bundled in release builds** — users import
+their own dumps at the first-run ROM gate (dev builds may bundle them via
+`-PadamRoms=true`, which release builds refuse). The FujiNet runtime pulls
+in LGPL/MIT/Apache libraries.

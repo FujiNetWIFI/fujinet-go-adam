@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.Surface
 import online.fujinet.go.adam.core.EmulatorNative
 import online.fujinet.go.adam.input.AdamController
+import online.fujinet.go.adam.settings.RomStore
 import java.io.File
 import kotlin.concurrent.thread
 
@@ -38,6 +39,13 @@ class SessionController private constructor(private val context: Context) {
         set(value) { settings.joystickHapticsEnabled = value }
 
     fun startIfNeeded() {
+        if (!RomStore.hasSystemRoms(context)) {
+            // The ROM gate (ui/RomGate.kt) is responsible for prompting
+            // import and re-calling startIfNeeded(); starting without
+            // OS7/EOS/WP would just fail in adamcore_create (silently --
+            // the old behavior was a black screen).
+            return
+        }
         synchronized(lock) {
             if (started) return
             started = true

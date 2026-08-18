@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.0
+
+Google Play readiness release.
+
+### Changed
+- **Coleco system ROMs (OS7/EOS/WP) are no longer bundled or tracked in the
+  repository.** On first run a ROM gate imports the user's own dumps
+  (classified by CRC32 with a file-name fallback); the session refuses to
+  start without them instead of the old silent black screen. Dev builds may
+  stage local ROMs via `-PadamRoms=true`, which release builds refuse; a
+  `verifyNoEmbeddedRoms` byte-probe additionally guards
+  `assembleRelease`/`bundleRelease`. COMPLIANCE/NOTICES no longer describe
+  the images as public domain.
+- `RuntimeInstaller` stages ROM assets per-file (fill-missing) and no longer
+  crashes the launch when the asset dir is absent (ROM-free release builds).
+- Cleartext HTTP scoped to the loopback FujiNet web UI via a network
+  security config; release builds carry full native debug symbols.
+
+### Added
+- Release signing via `keystore.properties`, `tools/release-play.sh`
+  (signed AAB), privacy policy under `docs/`, and a Play submission
+  checklist.
+
 ## 0.1.0 (in progress)
 
 First working release fusing the ADAMEm Coleco ADAM emulator and the FujiNet

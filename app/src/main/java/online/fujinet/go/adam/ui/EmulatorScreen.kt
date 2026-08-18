@@ -43,11 +43,23 @@ import androidx.compose.ui.unit.dp
 import online.fujinet.go.adam.R
 import online.fujinet.go.adam.SessionController
 import online.fujinet.go.adam.fujinet.FujiNetWebViewActivity
+import online.fujinet.go.adam.settings.RomStore
 
 private enum class Overlay { NONE, KEYBOARD, CONTROLLER }
 
 @Composable
 fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
+    val gateContext = LocalContext.current
+    var hasRoms by remember { mutableStateOf(RomStore.hasSystemRoms(gateContext)) }
+
+    if (!hasRoms) {
+        RomGate(onImported = {
+            hasRoms = RomStore.hasSystemRoms(gateContext)
+            if (hasRoms) session.startIfNeeded()
+        })
+        return
+    }
+
     var overlay by remember { mutableStateOf(Overlay.KEYBOARD) }
     val context = LocalContext.current
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
