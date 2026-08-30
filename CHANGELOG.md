@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.2
+
+FujiNet runtime fix: the bundled firmware moves from `a4b35d18` to
+`a7a4fd3a` (fujinet-firmware).
+
+### Fixed
+- An AdamNet `N:` open no longer carries the padding that follows the device
+  spec. The client library copies the URL into a fixed 256-byte field and
+  sends the whole block, and the runtime read that payload by length, so the
+  padding rode along inside the string — invisible in the logs, but not to a
+  protocol that reads the device spec byte for byte. `N:GCAL:///DAY/<date>`
+  was parsed as a calendar named after its own date instead of as a DAY view,
+  so day, week and month listings came back empty. The runtime now stops at
+  the end of the string, as the other buses already do.
+
 ## 1.0.1
 
 FujiNet runtime refresh: the bundled firmware moves from `3e888b1c` to
