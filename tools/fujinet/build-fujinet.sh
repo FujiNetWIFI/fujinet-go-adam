@@ -239,11 +239,14 @@ patch("fujinet_pc.cmake", [
     (
         'set(_MBEDTLS_ROOT_HINTS $ENV{MBEDTLS_ROOT_DIR} ${MBEDTLS_ROOT_DIR})\n'
         'set(_MBEDTLS_ROOT_PATHS "$ENV{PROGRAMFILES}/libmbedtls")\n'
-        'set(_MBEDTLS_ROOT_HINTS_AND_PATHS HINTS ${_MBEDTLS_ROOT_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
-        'find_library(MBEDTLS_STATIC_LIB libmbedtls.a HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS})\n'
-        'find_library(MBEDX509_STATIC_LIB libmbedx509.a HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS})\n'
-        'find_library(MBEDCRYPTO_STATIC_LIB libmbedcrypto.a HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS})\n'
-        'find_path(MBEDTLS_INCLUDE_DIR mbedtls/ssl.h HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS} PATH_SUFFIXES include)\n',
+        'set(_MBEDTLS_LIB_HINTS ${_MBEDTLS_ROOT_HINTS} /usr/lib/mbedtls3 /usr/lib64/mbedtls3 /usr/local/lib/mbedtls3)\n'
+        'set(_MBEDTLS_INC_HINTS ${_MBEDTLS_ROOT_HINTS} /usr/include/mbedtls3 /usr/local/include/mbedtls3)\n'
+        'find_library(MBEDTLS_STATIC_LIB libmbedtls.a HINTS ${_MBEDTLS_LIB_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
+        'find_library(MBEDX509_STATIC_LIB libmbedx509.a HINTS ${_MBEDTLS_LIB_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
+        'find_library(MBEDCRYPTO_STATIC_LIB libmbedcrypto.a HINTS ${_MBEDTLS_LIB_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
+        'find_path(MBEDTLS_INCLUDE_DIR mbedtls/sha256.h HINTS ${_MBEDTLS_INC_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS} PATH_SUFFIXES include)\n',
+        # The NDK sysroot is off-limits to find_library/find_path, so the
+        # Android mbedTLS build is wired in by hand rather than discovered.
         'if(FUJINET_ANDROID AND DEFINED MBEDTLS_ROOT_DIR)\n'
         '    set(MBEDTLS_STATIC_LIB "${MBEDTLS_ROOT_DIR}/lib/libmbedtls.a")\n'
         '    set(MBEDX509_STATIC_LIB "${MBEDTLS_ROOT_DIR}/lib/libmbedx509.a")\n'
@@ -252,23 +255,24 @@ patch("fujinet_pc.cmake", [
         'else()\n'
         '    set(_MBEDTLS_ROOT_HINTS $ENV{MBEDTLS_ROOT_DIR} ${MBEDTLS_ROOT_DIR})\n'
         '    set(_MBEDTLS_ROOT_PATHS "$ENV{PROGRAMFILES}/libmbedtls")\n'
-        '    set(_MBEDTLS_ROOT_HINTS_AND_PATHS HINTS ${_MBEDTLS_ROOT_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
-        '    find_library(MBEDTLS_STATIC_LIB libmbedtls.a HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS})\n'
-        '    find_library(MBEDX509_STATIC_LIB libmbedx509.a HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS})\n'
-        '    find_library(MBEDCRYPTO_STATIC_LIB libmbedcrypto.a HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS})\n'
-        '    find_path(MBEDTLS_INCLUDE_DIR mbedtls/ssl.h HINTS ${_MBEDTLS_ROOT_HINTS_AND_PATHS} PATH_SUFFIXES include)\n'
+        '    set(_MBEDTLS_LIB_HINTS ${_MBEDTLS_ROOT_HINTS} /usr/lib/mbedtls3 /usr/lib64/mbedtls3 /usr/local/lib/mbedtls3)\n'
+        '    set(_MBEDTLS_INC_HINTS ${_MBEDTLS_ROOT_HINTS} /usr/include/mbedtls3 /usr/local/include/mbedtls3)\n'
+        '    find_library(MBEDTLS_STATIC_LIB libmbedtls.a HINTS ${_MBEDTLS_LIB_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
+        '    find_library(MBEDX509_STATIC_LIB libmbedx509.a HINTS ${_MBEDTLS_LIB_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
+        '    find_library(MBEDCRYPTO_STATIC_LIB libmbedcrypto.a HINTS ${_MBEDTLS_LIB_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS})\n'
+        '    find_path(MBEDTLS_INCLUDE_DIR mbedtls/sha256.h HINTS ${_MBEDTLS_INC_HINTS} PATHS ${_MBEDTLS_ROOT_PATHS} PATH_SUFFIXES include)\n'
         'endif()\n',
     ),
     (
-        'target_link_libraries(fujinet pthread expat cjson cjson_utils smb2 ssh nfs)\n',
+        'target_link_libraries(fujinet pthread expat cjson cjson_utils smb2 ssh nfs gumbo_fn)\n',
         'if(FUJINET_ANDROID)\n'
         '    set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)\n'
         '    set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)\n'
         '    add_subdirectory(components/expat/expat/expat)\n'
         '    find_library(ANDROID_LOG_LIB log)\n'
-        '    target_link_libraries(fujinet expat cjson cjson_utils smb2 ssh nfs ${ANDROID_LOG_LIB})\n'
+        '    target_link_libraries(fujinet expat cjson cjson_utils smb2 ssh nfs gumbo_fn ${ANDROID_LOG_LIB})\n'
         'else()\n'
-        '    target_link_libraries(fujinet pthread expat cjson cjson_utils smb2 ssh nfs)\n'
+        '    target_link_libraries(fujinet pthread expat cjson cjson_utils smb2 ssh nfs gumbo_fn)\n'
         'endif()\n',
     ),
     (

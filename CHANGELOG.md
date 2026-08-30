@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.1
+
+FujiNet runtime refresh: the bundled firmware moves from `3e888b1c` to
+`a4b35d18` (fujinet-firmware).
+
+### Changed
+- The web UI gains an optional global password and an SD card file manager,
+  N: gains the CALENDAR/GCAL/ICAL protocols, the CONFIG slot-assignment
+  screen shows the right filenames, opening an AdamNet network connection no
+  longer crashes on a null device, and a zero-length app key write clears the
+  key instead of failing.
+- `tools/fujinet/build-fujinet.sh` follows the firmware's mbedTLS discovery
+  rewrite (it now probes for `mbedtls/sha256.h`, absent in Mbed TLS 4.x) and
+  links the new `gumbo_fn` target.
+
 ## 1.0.0
 
 Google Play readiness release.
