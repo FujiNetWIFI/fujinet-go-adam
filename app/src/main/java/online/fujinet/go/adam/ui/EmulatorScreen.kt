@@ -53,10 +53,12 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     var hasRoms by remember { mutableStateOf(RomStore.hasSystemRoms(gateContext)) }
 
     if (!hasRoms) {
-        RomGate(onImported = {
-            hasRoms = RomStore.hasSystemRoms(gateContext)
-            if (hasRoms) session.startIfNeeded()
-        })
+        ProvideUiHaptics(enabled = session.interfaceHapticsEnabled) {
+            RomGate(onImported = {
+                hasRoms = RomStore.hasSystemRoms(gateContext)
+                if (hasRoms) session.startIfNeeded()
+            })
+        }
         return
     }
 
@@ -68,15 +70,18 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     var showSettings by remember { mutableStateOf(false) }
     var keyboardHaptics by remember { mutableStateOf(session.keyboardHapticsEnabled) }
     var joystickHaptics by remember { mutableStateOf(session.joystickHapticsEnabled) }
+    var interfaceHaptics by remember { mutableStateOf(session.interfaceHapticsEnabled) }
 
     if (showSettings) {
         SettingsDialog(
             config = session.config,
             keyboardHaptics = keyboardHaptics,
             joystickHaptics = joystickHaptics,
+            interfaceHaptics = interfaceHaptics,
             onApply = { session.applyConfig(it) },
             onKeyboardHapticsChange = { keyboardHaptics = it; session.keyboardHapticsEnabled = it },
             onJoystickHapticsChange = { joystickHaptics = it; session.joystickHapticsEnabled = it },
+            onInterfaceHapticsChange = { interfaceHaptics = it; session.interfaceHapticsEnabled = it },
             onResetColeco = { session.resetColeco(); showSettings = false },
             onDismiss = { showSettings = false },
         )
@@ -86,6 +91,7 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
     // clear of the status bar, the gesture/navigation bar and any display cutout
     // (without this the top menu bar hid under the status bar on older devices,
     // and the bottom keyboard/joystick row behind the nav bar).
+    ProvideUiHaptics(enabled = interfaceHaptics) {
     Column(modifier = Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
         FunctionBar(
             overlay = overlay,
@@ -147,6 +153,7 @@ fun EmulatorScreen(session: SessionController, onShutdown: () -> Unit = {}) {
             }
         }
     }
+    }
 }
 
 @Composable
@@ -180,8 +187,9 @@ private fun FunctionBar(
  */
 @Composable
 private fun FujiNetBarButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val blip = LocalUiHaptic.current
     TextButton(
-        onClick = onClick,
+        onClick = { blip(); onClick() },
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
     ) {
@@ -206,8 +214,9 @@ private fun BarButton(
     active: Boolean = false,
     onClick: () -> Unit,
 ) {
+    val blip = LocalUiHaptic.current
     TextButton(
-        onClick = onClick,
+        onClick = { blip(); onClick() },
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
     ) {
