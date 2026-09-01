@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.0.4
+
+### Changed
+- **The bundled FujiNet runtime no longer builds against Mbed TLS 4.x.** That
+  release removed the low-level crypto headers the runtime's TLS backend needs
+  and split the rest into a separate library, so a build machine whose system
+  Mbed TLS had moved to 4.x could produce a runtime with broken TLS instead of
+  failing outright. The build now requires a 3.x install, or stops and says so.
+
+### Added
+- Gmail message composition, and calendar events that can be created and
+  edited rather than only read.
+
+### Known issue
+- **AdamNet N: opens can again see the padding that follows the device
+  spec.** The fix released in 1.0.2 has not yet landed on the firmware's
+  mainline, and this build tracks mainline. A protocol that reads the device
+  spec byte for byte -- GCAL in particular -- may fetch an empty result. The
+  fix returns once the AdamNet work is merged upstream.
+
 ## 1.0.3
 
 ### Added
