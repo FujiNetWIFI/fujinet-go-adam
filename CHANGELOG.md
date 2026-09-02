@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.5
+
+### Changed
+- **The bundled FujiNet runtime is rebuilt from upstream `master`
+  (`13465cdd`).** The previous build came from `force-mbedtls-3`, a branch that
+  was never merged, so the runtime had been standing still while upstream moved
+  on. The Mbed TLS 3.x requirement it was branched for has landed, and this
+  picks up the device-chain rework and the Drivewire cassette media format
+  alongside it.
+- **Still missing the AdamNet device-spec padding fix.** That fix has never
+  landed on the firmware's mainline, so moving to `master` does not restore it:
+  `N:` opens on AdamNet can still see the padding that follows the device spec,
+  and a `GCAL` day view in particular may come back empty. It returns once the
+  AdamNet work is merged upstream.
+
 ## 1.0.4
 
 ### Changed
