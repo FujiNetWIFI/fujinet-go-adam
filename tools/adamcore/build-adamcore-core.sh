@@ -18,7 +18,7 @@ set -euo pipefail
 
 SOURCE_URL="https://github.com/tschak909/adamcore"
 SOURCE_BRANCH="main"
-SOURCE_COMMIT="d37f05596931859d41d4e4d267531509a3d7f2f3"
+SOURCE_COMMIT="2fd4ff058e65bd181f724e853e1b81011e060577"
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SRC="${ADAMCORE_SRC:-$HOME/Workspace/adamcore}"

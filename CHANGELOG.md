@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.1.0
+
+### Changed
+- **FujiNet is far quicker to talk to.** Listing a directory in CONFIG used to
+  stop between every entry, and an EOS cold boot paused for several seconds
+  right after the bus reset. Neither happens on a real ADAM, and neither was a
+  fault in FujiNet -- the same firmware is fast under ADAMEm talking to
+  fujinet-pc. Both were in how the emulator drove the AdamNet link.
+- **Directory entries arrive about five times faster** (351 ms -> 67 ms each).
+  Every FujiNet command was preceded by a probe asking the device whether it
+  had a leftover response to discard. The device answers that probe in a way
+  the probe could not interpret, so it always ran to its full timeout, adding a
+  quarter of a second to every command. The probe is gone -- real hardware does
+  not send one -- and replies are now collected as soon as they arrive rather
+  than on the next emulated frame.
+- **Cold boot no longer stalls** (4222 ms -> 383 ms for the bus roll-call). The
+  ADAM asks every bus address in turn who is there, and the addresses FujiNet
+  does not answer for were each given the long grace period meant for a device
+  that is present but still starting up. Once FujiNet has shown it is
+  responding, silence from an address is taken to mean nothing is attached.
+
 ## 1.0.5
 
 ### Changed
